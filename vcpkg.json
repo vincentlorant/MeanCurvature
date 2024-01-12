@@ -1,0 +1,9 @@
+{
+  "name": "mean-curvature",
+  "version-string": "0.0.1",
+  "dependencies": [
+    "tbb",
+    "eigen3",
+    "glog"
+  ]
+}

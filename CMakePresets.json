@@ -1,0 +1,23 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 22,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "linux",
+      "displayName": "linux",
+      "binaryDir": "build",
+      "toolchainFile": "/home/vincent/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {}
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "linux",
+      "configurePreset": "linux"
+    }
+  ]
+}
