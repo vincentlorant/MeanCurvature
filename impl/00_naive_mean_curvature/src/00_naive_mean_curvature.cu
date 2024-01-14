@@ -73,14 +73,15 @@ void MeanCurvature(std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
     size_t nvertices = mesh->vertices_.size();
     size_t nrings = cuda_rings.size();
 
-    // copy ring, vertices & normals data to the device
+    // Copy ring, vertices & normals data to the device
     CudaRing *d_cuda_rings;
-    Eigen::Vector3d *d_vertices;
-    Eigen::Vector3d *d_normals;
     size_t ring_mem_size = sizeof(CudaRing) * nrings;
     cudaCheck(cudaMalloc(&d_cuda_rings, ring_mem_size));
     cudaCheck(cudaMemcpy(d_cuda_rings, cuda_rings.data(), ring_mem_size,
                          cudaMemcpyKind::cudaMemcpyHostToDevice));
+
+    Eigen::Vector3d *d_vertices;
+    Eigen::Vector3d *d_normals;
     size_t vec_mem_size = sizeof(Eigen::Vector3d) * nvertices;
     cudaCheck(cudaMalloc(&d_vertices, vec_mem_size));
     cudaCheck(cudaMalloc(&d_normals, vec_mem_size));
@@ -89,40 +90,40 @@ void MeanCurvature(std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
     cudaCheck(cudaMemcpy(d_normals, mesh->vertex_normals_.data(), vec_mem_size,
                          cudaMemcpyKind::cudaMemcpyHostToDevice));
 
-    // cuda kernel config
+    // Cuda kernel config
     dim3 block_size(128);
     dim3 grid_size((nrings + block_size.x - 1) / block_size.x);
 
-    /* Note
-     * depending on input data unit and scaling, edges length can be very small
-     * to avoid problems which could occurs during computation, the smallest
-     * edge's length is used to scale up the vertices
+    /* Purpose:
+     * Uniformly scales up vertices based on the smallest edge's length to
+     * ensure computation-friendly values, especially when dealing with small
+     * edge lengths.
      */
     double smallest = GetSmallestEdgeLength(d_cuda_rings, nrings, d_vertices,
                                             nvertices, grid_size, block_size);
     double scalar_fix = scalar / smallest;
     ScalePositions<<<grid_size, block_size>>>(d_vertices, nrings, scalar_fix);
 
-    // optimization
+    // Optimization
     for (int i = 0; i < itr; i++) {
         OptimizeMeanCurvature<<<grid_size, block_size>>>(d_cuda_rings, nrings,
                                                          d_vertices, d_normals);
     }
     cudaCheck(cudaDeviceSynchronize());
 
-    // scale back vertices to original values
+    // Scale back vertices to original values
     ScalePositions<<<grid_size, block_size>>>(d_vertices, nrings,
                                               1.0 / scalar_fix);
     cudaCheck(cudaDeviceSynchronize());
 
-    // get back updated vertices to host
+    // Get back updated vertices to host
     cudaCheck(cudaMemcpy(mesh->vertices_.data(), d_vertices, vec_mem_size,
                          cudaMemcpyKind::cudaMemcpyDeviceToHost));
     cudaCheck(cudaFree(d_cuda_rings));
     cudaCheck(cudaFree(d_vertices));
     cudaCheck(cudaFree(d_normals));
 
-    // update normals with new vertices
+    // Update normals with new vertices
     mesh->ComputeVertexNormals();
 }
 
@@ -134,6 +135,6 @@ int main(int argv, char **argc) {
     TimeIt(MeanCurvature(mesh, itr));
     open3d::visualization::DrawGeometries({mesh}, "debug", 1280, 720, 100, 100,
                                           true);
-
+    
     return EXIT_SUCCESS;
 }

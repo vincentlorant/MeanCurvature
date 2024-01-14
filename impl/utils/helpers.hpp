@@ -1,11 +1,11 @@
+#pragma once
+
 #include <chrono>
 #include <filesystem>
 #include <glog/logging.h>
 #include <memory>
 #include <open3d/Open3D.h>
 #include <string>
-
-#pragma once
 
 #define time_duration std::chrono::duration_cast<std::chrono::milliseconds>
 #define TimeIt(func)                                                           \

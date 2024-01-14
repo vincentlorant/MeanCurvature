@@ -8,12 +8,12 @@
             "name": "CUDA C++: Launch",
             "type": "cuda-gdb",
             "request": "launch",
-            "program": "${workspaceFolder}/00_naive_mean_curvature/build/00_naive_mean_curvature"
+            "program": "${workspaceFolder}/build/00_naive_mean_curvature/00_naive_mean_curvature"
         },
-        // {
-        //     "name": "CUDA C++: Attach",
-        //     "type": "cuda-gdb",
-        //     "request": "attach"
-        // }
+        {
+            "name": "CUDA C++: Attach",
+            "type": "cuda-gdb",
+            "request": "attach"
+        }
     ]
 }

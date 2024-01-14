@@ -11,7 +11,9 @@
       "displayName": "linux",
       "binaryDir": "build",
       "toolchainFile": "/home/vincent/vcpkg/scripts/buildsystems/vcpkg.cmake",
-      "cacheVariables": {}
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     }
   ],
   "buildPresets": [
