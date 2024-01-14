@@ -25,11 +25,11 @@ class CudaRing {
         __device__ CurvatureTerm() = default;
         __device__ CurvatureTerm(double kv, double wv) : k(kv), w(wv) {}
         __device__ void operator+=(const CurvatureTerm &otr);
-        __device__ double Compute();
+        __device__ double NormalizeCurvature();
     };
 
     VertexId center_;
-    CudaEdge edges_[NUM_EDGES];
+    CudaEdge edges_[MAX_NUM_EDGES_PER_RING];
     int edges_count_ = 0;
 
   public:

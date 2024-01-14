@@ -27,9 +27,9 @@ class HostRing {
 
     inline VertexId GetCenter() const;
 
-    const std::unordered_map<VertexId, EdgeData> &GetEdges() const;
-
     void AddEdge(VertexId edge_id, VertexId adj);
+
+    const std::unordered_map<VertexId, EdgeData> &GetEdges() const;
 
     CudaRing ToCudaRing() const;
 

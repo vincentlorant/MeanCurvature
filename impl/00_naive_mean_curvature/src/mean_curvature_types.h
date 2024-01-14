@@ -1,5 +1,5 @@
 #pragma once
 
-#define NUM_EDGES 24
+#define MAX_NUM_EDGES_PER_RING 24
 
 using VertexId = int;

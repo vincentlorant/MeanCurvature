@@ -2,13 +2,14 @@
 #include "mean_curvature_types.h"
 
 #include <assert.h>
+#include <float.h>
 
 void CudaRing::CurvatureTerm::operator+=(const CurvatureTerm &otr) {
     k += otr.k;
     w += otr.w;
 }
 
-double CudaRing::CurvatureTerm::Compute() { return k / (4.0 * w); }
+double CudaRing::CurvatureTerm::NormalizeCurvature() { return k / (4.0 * w); }
 
 CudaRing::CudaRing(VertexId center) : center_(center) {}
 
@@ -21,7 +22,7 @@ void CudaRing::AddEdge(int end, int adj1, int adj2) {
 int CudaRing::GetCenter() { return center_; }
 
 double CudaRing::GetSmallestEdgeLength(Eigen::Vector3d *positions) {
-    double smallest = 1e20;
+    double smallest = DBL_MAX;
     for (int i = 0; i < edges_count_; i++) {
         const CudaEdge &e = edges_[i];
         double length = (positions[e.end] - positions[center_]).norm();
@@ -57,7 +58,7 @@ void CudaRing::ComputeCurvature(Eigen::Vector3d *positions,
     for (int i = 0; i < edges_count_; i++) {
         ct += ComputeEdgeCurvature(i, positions, normals);
     }
-    double delta = ct.Compute();
+    double delta = ct.NormalizeCurvature();
     delta = max(-0.5, min(0.5, delta));
     positions[center_] -= normals[center_] * delta;
 }

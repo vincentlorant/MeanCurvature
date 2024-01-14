@@ -136,5 +136,6 @@ int main(int argv, char **argc) {
     open3d::visualization::DrawGeometries({mesh}, "debug", 1280, 720, 100, 100,
                                           true);
     
+    
     return EXIT_SUCCESS;
 }

@@ -21,11 +21,6 @@ void HostRing::AddCenter(VertexId id) { center_ = id; }
 
 VertexId HostRing::GetCenter() const { return center_; }
 
-const std::unordered_map<VertexId, HostRing::EdgeData> &
-HostRing::GetEdges() const {
-    return edges_;
-}
-
 void HostRing::AddEdge(VertexId edge_id, VertexId adj) {
     if (edges_.find(edge_id) == edges_.end()) {
         edges_[edge_id] = EdgeData();
@@ -34,9 +29,10 @@ void HostRing::AddEdge(VertexId edge_id, VertexId adj) {
 }
 
 CudaRing HostRing::ToCudaRing() const {
-    if (edges_.size() > NUM_EDGES) {
+    if (edges_.size() > MAX_NUM_EDGES_PER_RING) {
         LOG(FATAL) << "edges size:" << edges_.size()
-                   << " NUM_EDGES def:" << NUM_EDGES;
+                   << " should not be greater than MAX_NUM_EDGES_PER_RING:"
+                   << MAX_NUM_EDGES_PER_RING;
     }
     CudaRing cr(center_);
     for (const auto &p : edges_) {
@@ -47,6 +43,11 @@ CudaRing HostRing::ToCudaRing() const {
     }
 
     return cr;
+}
+
+const std::unordered_map<VertexId, HostRing::EdgeData> &
+HostRing::GetEdges() const {
+    return edges_;
 }
 
 std::vector<int> HostRing::CheckForIncompleteEdges() const {
