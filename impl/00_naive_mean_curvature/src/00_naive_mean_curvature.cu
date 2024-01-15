@@ -109,8 +109,6 @@ void MeanCurvature(std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
         OptimizeMeanCurvature<<<grid_size, block_size>>>(d_cuda_rings, nrings,
                                                          d_vertices, d_normals);
     }
-    cudaCheck(cudaDeviceSynchronize());
-
     // Scale back vertices to original values
     ScalePositions<<<grid_size, block_size>>>(d_vertices, nrings,
                                               1.0 / scalar_fix);
