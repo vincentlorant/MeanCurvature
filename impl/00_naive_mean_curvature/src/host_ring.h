@@ -11,14 +11,16 @@
 #include "mean_curvature_types.h"
 
 class HostRing {
+  public:
     struct EdgeData {
         VertexId adjs[2];
         uint8_t count = 0;
 
         void AddAdj(const VertexId &id);
-        inline bool Complete() const;
+        bool Complete() const;
     };
 
+  private:
     std::unordered_map<VertexId, EdgeData> edges_;
     VertexId center_;
 
@@ -31,7 +33,11 @@ class HostRing {
 
     const std::unordered_map<VertexId, EdgeData> &GetEdges() const;
 
-    CudaRing ToCudaRing() const;
+    // d_edges is expected to be a pointer to edges array allocated on the
+    // device; all ring complete edges should be included in the array
+    CudaRing ToCudaRing(CudaRing::CudaEdge *d_edges) const;
+
+    size_t GetCompleteEdgeCount() const;
 
     // happen when mesh is not closed
     std::vector<int> CheckForIncompleteEdges() const;

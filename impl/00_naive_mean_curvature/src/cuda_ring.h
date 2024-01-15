@@ -6,17 +6,19 @@
 #include "mean_curvature_types.h"
 
 class CudaRing {
+  public:
+    struct CudaEdge {
+        VertexId end;
+        VertexId adjs[2];
+    };
+
+  private:
     enum class AngleType { Obtuse, Acute };
 
     struct CurvatureData {
         double area;
         double cotan;
         AngleType angle_type;
-    };
-
-    struct CudaEdge {
-        VertexId end;
-        VertexId adjs[2];
     };
 
     struct CurvatureTerm {
@@ -29,13 +31,16 @@ class CudaRing {
     };
 
     VertexId center_;
-    CudaEdge edges_[MAX_NUM_EDGES_PER_RING];
+    CudaEdge *edges_;
     int edges_count_ = 0;
 
   public:
-    __host__ __device__ CudaRing() = default;
+    __host__ __device__ CudaRing(VertexId center, CudaEdge *edges,
+                                 int edges_count);
 
-    __host__ __device__ CudaRing(VertexId center);
+    __host__ __device__ ~CudaRing();
+
+    __host__ __device__ void CleanEdges() { cudaFree(edges_); }
 
     __host__ __device__ int GetCenter();
 

@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "cuda_helpers.h"
 #include "cuda_ring.h"
 #include "mean_curvature_types.h"
 
@@ -28,26 +29,25 @@ void HostRing::AddEdge(VertexId edge_id, VertexId adj) {
     edges_[edge_id].AddAdj(adj);
 }
 
-CudaRing HostRing::ToCudaRing() const {
-    if (edges_.size() > MAX_NUM_EDGES_PER_RING) {
-        LOG(FATAL) << "edges size:" << edges_.size()
-                   << " should not be greater than MAX_NUM_EDGES_PER_RING:"
-                   << MAX_NUM_EDGES_PER_RING;
-    }
-    CudaRing cr(center_);
-    for (const auto &p : edges_) {
-        if (p.second.Complete() == false) {
-            continue;
-        }
-        cr.AddEdge(p.first, p.second.adjs[0], p.second.adjs[1]);
-    }
+CudaRing HostRing::ToCudaRing(CudaRing::CudaEdge *d_edges) const {
 
-    return cr;
+    return CudaRing(center_, d_edges, GetCompleteEdgeCount());
 }
 
 const std::unordered_map<VertexId, HostRing::EdgeData> &
 HostRing::GetEdges() const {
     return edges_;
+}
+
+size_t HostRing::GetCompleteEdgeCount() const{
+    size_t count = 0;
+    for (const auto &p : edges_) {
+        if (p.second.Complete()) {
+            count++;
+        }
+    }
+
+    return count;
 }
 
 std::vector<int> HostRing::CheckForIncompleteEdges() const {

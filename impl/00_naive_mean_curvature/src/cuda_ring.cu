@@ -11,7 +11,10 @@ void CudaRing::CurvatureTerm::operator+=(const CurvatureTerm &otr) {
 
 double CudaRing::CurvatureTerm::NormalizeCurvature() { return k / (4.0 * w); }
 
-CudaRing::CudaRing(VertexId center) : center_(center) {}
+CudaRing::CudaRing(VertexId center, CudaEdge *edges, int edges_count)
+    : center_(center), edges_(edges), edges_count_(edges_count) {}
+
+CudaRing::~CudaRing() { /*cudaFree(edges_);*/ }
 
 void CudaRing::SetCenter(int center) { center_ = center; }
 
