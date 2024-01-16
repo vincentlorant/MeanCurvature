@@ -37,24 +37,6 @@ double CudaRing::GetSmallestEdgeLength(Eigen::Vector3d *positions) {
     return smallest;
 }
 
-void CudaRing::UpdateCenterNormal(Eigen::Vector3d *positions,
-                                  Eigen::Vector3d *normals) {
-    Eigen::Vector3d sum = Eigen::Vector3d::Zero();
-
-    for (int i = 0; i < edges_count_; i++) {
-        const CudaEdge &e = edges_[i];
-        int ie = e.end;
-        int ia = e.adjs[0];
-        int ib = e.adjs[1];
-        Eigen::Vector3d c = positions[ie] - positions[center_];
-        Eigen::Vector3d a = positions[ia] - positions[center_];
-        Eigen::Vector3d b = positions[ib] - positions[center_];
-        sum += a.cross(c);
-        sum += b.cross(c);
-    }
-    normals[center_] = sum.normalized();
-}
-
 void CudaRing::ComputeCurvature(Eigen::Vector3d *positions,
                                 Eigen::Vector3d *normals) {
     CurvatureTerm ct;
@@ -96,34 +78,34 @@ CudaRing::ComputeEdgeCurvature(int edge_idx, Eigen::Vector3d *positions,
     return {wk, dr.area + dl.area};
 }
 
-CudaRing::CurvatureData CudaRing::GetCurvatureData(VertexId pc, VertexId pl,
-                                                   VertexId pr,
+CudaRing::CurvatureData CudaRing::GetCurvatureData(VertexId ie, VertexId ia,
+                                                   VertexId ib,
                                                    Eigen::Vector3d *positions) {
-    auto pcpr = positions[pc] - positions[pr];
-    auto plpr = positions[pl] - positions[pr];
-    auto prpc = positions[pr] - positions[pc];
-    auto plpc = positions[pl] - positions[pc];
-    auto pcpl = positions[pc] - positions[pl];
-    auto prpl = positions[pr] - positions[pl];
+    auto ieib = positions[ie] - positions[ib];
+    auto iaib = positions[ia] - positions[ib];
+    auto ibie = positions[ib] - positions[ie];
+    auto iaie = positions[ia] - positions[ie];
+    auto ieia = positions[ie] - positions[ia];
+    auto ibia = positions[ib] - positions[ia];
 
-    auto prpc_n = prpc.normalized();
-    auto plpc_n = plpc.normalized();
-    auto pcpr_n = pcpr.normalized();
-    auto plpr_n = plpr.normalized();
-    auto pcpl_n = pcpl.normalized();
-    auto prpl_n = prpl.normalized();
+    auto ibie_n = ibie.normalized();
+    auto iaie_n = iaie.normalized();
+    auto ieib_n = ieib.normalized();
+    auto iaib_n = iaib.normalized();
+    auto ieia_n = ieia.normalized();
+    auto ibia_n = ibia.normalized();
 
     double epsilon = 0.0001;
     double w = 0.;
     AngleType atype = AngleType::Obtuse;
-    double cotan = pcpr.dot(plpr) / pcpr.cross(plpr).norm();
+    double cotan = ieib.dot(iaib) / ieib.cross(iaib).norm();
 
-    if (plpc_n.dot(prpc_n) < epsilon) {
-        w = plpc.cross(prpc).norm() * 0.25;
-    } else if (pcpl_n.dot(prpl_n) < epsilon || pcpr_n.dot(plpr_n) < epsilon) {
-        w = plpc.cross(prpc).norm() * 0.125;
+    if (iaie_n.dot(ibie_n) < epsilon) {
+        w = iaie.cross(ibie).norm() * 0.25;
+    } else if (ieia_n.dot(ibia_n) < epsilon || ieib_n.dot(iaib_n) < epsilon) {
+        w = iaie.cross(ibie).norm() * 0.125;
     } else {
-        w = plpc.dot(plpc) * cotan * 0.125;
+        w = iaie.dot(iaie) * cotan * 0.125;
         atype = AngleType::Acute;
     }
 

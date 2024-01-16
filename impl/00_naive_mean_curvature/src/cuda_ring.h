@@ -50,10 +50,6 @@ class CudaRing {
 
     __device__ double GetSmallestEdgeLength(Eigen::Vector3d *positions);
 
-    /* Not tested yet */
-    __device__ void UpdateCenterNormal(Eigen::Vector3d *positions,
-                                       Eigen::Vector3d *normals);
-
     __device__ void ComputeCurvature(Eigen::Vector3d *positions,
                                      Eigen::Vector3d *normals);
 
@@ -62,7 +58,7 @@ class CudaRing {
                                                   Eigen::Vector3d *positions,
                                                   Eigen::Vector3d *normals);
 
-    __device__ CurvatureData GetCurvatureData(VertexId pc, VertexId pl,
-                                              VertexId pr,
+    __device__ CurvatureData GetCurvatureData(VertexId ie, VertexId ia,
+                                              VertexId ib,
                                               Eigen::Vector3d *positions);
 };

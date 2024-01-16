@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.26)
 
 project(computer_vision LANGUAGES CUDA CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CUDA_STANDARD 20)  
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CUDA_SEPARABLE_COMPILATION  ON)
-# set(CMAKE_CUDA_FLAGS ${CMAKE_CUDA_FLAGS})
 
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/LinkOpen3D.cmake)

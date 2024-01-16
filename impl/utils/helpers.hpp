@@ -7,12 +7,28 @@
 #include <open3d/Open3D.h>
 #include <string>
 
+#include <cuda_runtime.h>
+
 #define time_duration std::chrono::duration_cast<std::chrono::milliseconds>
 #define TimeIt(func)                                                           \
     auto t1 = std::chrono::high_resolution_clock::now();                       \
     func;                                                                      \
     auto t2 = std::chrono::high_resolution_clock::now();                       \
-    LOG(INFO) << time_duration(t2 - t1).count() << "ns";
+    LOG(INFO) << time_duration(t2 - t1).count() << "ms";
+
+#define TimeCudaEvent(func, itr)                                               \
+    cudaEvent_t start, stop;                                                   \
+    cudaEventCreate(&start);                                                   \
+    cudaEventCreate(&stop);                                                    \
+    cudaEventRecord(start);                                                    \
+    func;                                                                      \
+    cudaEventRecord(stop);                                                     \
+    cudaEventSynchronize(stop);                                                \
+    float time;                                                                \
+    cudaEventElapsedTime(&time, start, stop);                                  \
+    cudaEventDestroy(start);                                                   \
+    cudaEventDestroy(stop);                                                    \
+    LOG(INFO) << "kernel avg time:" << (time / itr) << "ms";
 
 void SetupLogger() {
     google::InitGoogleLogging("mean_curvature");

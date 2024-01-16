@@ -1,5 +1,6 @@
 #include <Eigen/Dense>
 #include <memory>
+#include <tuple>
 
 #include <oneapi/tbb.h>
 #include <open3d/Open3D.h>
@@ -13,40 +14,40 @@
 __global__ void OptimizeMeanCurvature(CudaRing *rings, int n,
                                       Eigen::Vector3d *positions,
                                       Eigen::Vector3d *normals) {
-    int pos = threadIdx.x + blockIdx.x * blockDim.x;
-    if (pos < n) {
-        rings[pos].ComputeCurvature(positions, normals);
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i < n) {
+        rings[i].ComputeCurvature(positions, normals);
     }
 }
 
 __global__ void GetSmallestEdgesLengths(CudaRing *rings, int n,
                                         Eigen::Vector3d *positions,
                                         double *out) {
-    int pos = threadIdx.x + blockIdx.x * blockDim.x;
-    if (pos < n) {
-        out[pos] = rings[pos].GetSmallestEdgeLength(positions);
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i < n) {
+        out[i] = rings[i].GetSmallestEdgeLength(positions);
     }
 }
 
 __global__ void ScalePositions(Eigen::Vector3d *positions, int n,
                                float amount) {
-    int pos = threadIdx.x + blockIdx.x * blockDim.x;
-    if (pos < n) {
-        positions[pos] *= amount;
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i < n) {
+        positions[i] *= amount;
     }
 }
 
 double GetSmallestEdgeLength(CudaRing *d_cuda_rings, size_t nrings,
-                             Eigen::Vector3d *d_vertices, size_t nvertices,
+                             Eigen::Vector3d *d_vertices, size_t vertices_num,
                              dim3 grid_size, dim3 block_size) {
     double *d_small_values;
-    size_t values_mem_size = sizeof(double) * nvertices;
+    size_t values_mem_size = sizeof(double) * vertices_num;
     cudaCheck(cudaMalloc(&d_small_values, values_mem_size));
     GetSmallestEdgesLengths<<<grid_size, block_size>>>(
         d_cuda_rings, nrings, d_vertices, d_small_values);
 
     cudaCheck(cudaDeviceSynchronize());
-    std::vector<double> smalls(nvertices, 0);
+    std::vector<double> smalls(vertices_num, 0);
     cudaMemcpy(smalls.data(), d_small_values, values_mem_size,
                cudaMemcpyKind::cudaMemcpyDeviceToHost);
     cudaCheck(cudaFree(d_small_values));
@@ -54,34 +55,28 @@ double GetSmallestEdgeLength(CudaRing *d_cuda_rings, size_t nrings,
     return *std::min_element(smalls.begin(), smalls.end());
 }
 
-std::pair<std::vector<CudaRing>, CudaRing::CudaEdge *>
+std::pair<CudaRing *, CudaRing::CudaEdge *>
 GetCudaRingsAndEdges(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
     auto host_rings = CreateHostRings(mesh);
     size_t nrings = host_rings.size();
     std::vector<CudaRing> cuda_rings;
     cuda_rings.reserve(nrings);
 
-    // get total number of edges
+    // create cuda edges
     size_t edges_count = 0;
     for (auto &r : host_rings) {
         edges_count += r.second.GetCompleteEdgeCount();
     }
-
-    // combine edges to array
     auto edges = std::make_unique<CudaRing::CudaEdge[]>(edges_count);
     int c = 0;
     for (const auto &r : host_rings) {
-        for (const auto &p : r.second.GetEdges()) {
-            if (p.second.Complete() == false) {
-                continue;
+        for (const auto &e : r.second.GetEdges()) {
+            if (e.second.Complete()) {
+                edges[c++] = {e.first, e.second.adjs[0], e.second.adjs[1]};
             }
-            edges[c++] = {p.first, p.second.adjs[0], p.second.adjs[1]};
         }
     }
-
     assert(c == edges_count);
-
-    // copy edge array to device
     CudaRing::CudaEdge *d_edges;
     size_t mem_size = sizeof(CudaRing::CudaEdge) * edges_count;
     cudaCheck(cudaMalloc(&d_edges, mem_size));
@@ -94,29 +89,21 @@ GetCudaRingsAndEdges(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
         cuda_rings.push_back(r.second.ToCudaRing(pos));
         pos += r.second.GetCompleteEdgeCount();
     }
-
-    return {cuda_rings, d_edges};
-}
-
-void MeanCurvature(std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
-                   int itr = 50, double scalar = 0.035) {
-    auto rings_n_edges = GetCudaRingsAndEdges(mesh);
-    auto cuda_rings = rings_n_edges.first;
-    auto d_edges = rings_n_edges.second;
-
-    size_t nvertices = mesh->vertices_.size();
-    size_t nrings = cuda_rings.size();
-
-    // Copy ring, vertices & normals data to the device
     CudaRing *d_cuda_rings;
     size_t ring_mem_size = (sizeof(CudaRing) * nrings);
     cudaCheck(cudaMalloc(&d_cuda_rings, ring_mem_size));
     cudaCheck(cudaMemcpy(d_cuda_rings, cuda_rings.data(), ring_mem_size,
                          cudaMemcpyKind::cudaMemcpyHostToDevice));
 
+    return {d_cuda_rings, d_edges};
+}
+
+std::tuple<Eigen::Vector3d *, Eigen::Vector3d *, size_t>
+CopyMeshDataToDevice(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
+    size_t vertices_num = mesh->vertices_.size();
     Eigen::Vector3d *d_vertices;
     Eigen::Vector3d *d_normals;
-    size_t vec_mem_size = sizeof(Eigen::Vector3d) * nvertices;
+    size_t vec_mem_size = sizeof(Eigen::Vector3d) * vertices_num;
     cudaCheck(cudaMalloc(&d_vertices, vec_mem_size));
     cudaCheck(cudaMalloc(&d_normals, vec_mem_size));
     cudaCheck(cudaMemcpy(d_vertices, mesh->vertices_.data(), vec_mem_size,
@@ -124,42 +111,52 @@ void MeanCurvature(std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
     cudaCheck(cudaMemcpy(d_normals, mesh->vertex_normals_.data(), vec_mem_size,
                          cudaMemcpyKind::cudaMemcpyHostToDevice));
 
+    return {d_vertices, d_normals, vec_mem_size};
+}
+
+void MeanCurvature(std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
+                   int itr = 50, double scalar = 0.035) {
+    auto [d_cuda_rings, d_edges] = GetCudaRingsAndEdges(mesh);
+    auto [d_vertices, d_normals, mem_size] = CopyMeshDataToDevice(mesh);
+
     // Cuda kernel config
+    size_t vertices_num = mesh->vertices_.size();
     dim3 block_size(128);
-    dim3 grid_size((nrings + block_size.x - 1) / block_size.x);
+    dim3 grid_size((vertices_num + block_size.x - 1) / block_size.x);
 
     /* Purpose:
      * Uniformly scales up vertices based on the smallest edge's length to
      * ensure computation-friendly values, especially when dealing with small
      * edge lengths.
      */
-    double smallest = GetSmallestEdgeLength(d_cuda_rings, nrings, d_vertices,
-                                            nvertices, grid_size, block_size);
+    double smallest =
+        GetSmallestEdgeLength(d_cuda_rings, vertices_num, d_vertices,
+                              vertices_num, grid_size, block_size);
     double scalar_fix = scalar / smallest;
-    ScalePositions<<<grid_size, block_size>>>(d_vertices, nrings, scalar_fix);
+    ScalePositions<<<grid_size, block_size>>>(d_vertices, vertices_num,
+                                              scalar_fix);
 
     // Optimization
-    for (int i = 0; i < itr; i++) {
-        OptimizeMeanCurvature<<<grid_size, block_size>>>(d_cuda_rings, nrings,
-                                                         d_vertices, d_normals);
-    }
+    auto f = [&](auto d_cuda_rings, auto d_vertices, auto d_normals) {
+        for (int i = 0; i < itr; i++) {
+            OptimizeMeanCurvature<<<grid_size, block_size>>>(
+                d_cuda_rings, vertices_num, d_vertices, d_normals);
+        }
+    };
+    TimeCudaEvent(f(d_cuda_rings, d_vertices, d_normals), itr);
 
     // Scale back vertices to original values
-    ScalePositions<<<grid_size, block_size>>>(d_vertices, nrings,
+    ScalePositions<<<grid_size, block_size>>>(d_vertices, vertices_num,
                                               1.0 / scalar_fix);
     cudaCheck(cudaDeviceSynchronize());
 
     // Get back updated vertices to host
-    cudaCheck(cudaMemcpy(mesh->vertices_.data(), d_vertices, vec_mem_size,
+    cudaCheck(cudaMemcpy(mesh->vertices_.data(), d_vertices, mem_size,
                          cudaMemcpyKind::cudaMemcpyDeviceToHost));
     cudaCheck(cudaFree(d_cuda_rings));
     cudaCheck(cudaFree(d_edges));
     cudaCheck(cudaFree(d_vertices));
     cudaCheck(cudaFree(d_normals));
-
-    // for (auto &ring : cuda_rings) {
-    //     ring.CleanEdges();
-    // }
 
     // Update normals with new vertices
     mesh->ComputeVertexNormals();
