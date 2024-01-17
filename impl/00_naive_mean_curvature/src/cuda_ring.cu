@@ -93,16 +93,14 @@ CudaRing::CurvatureData CudaRing::GetCurvatureData(const Eigen::Vector3d &pc,
     auto vxe = px - pe;
 
     double w = 0.;
-    double cotan = 0;
     AngleType atype = AngleType::Obtuse;
+    double cotan = vcx.dot(vex) / vcx.cross(vex).norm();
 
     if (vec.normalized().dot(vxc.normalized()) < 0) {
         w = vec.cross(vxc).norm() * 0.25;
-        vcx.dot(vex) / vcx.cross(vex).norm();
     } else if (vce.normalized().dot(vxe.normalized()) < 0 ||
                vcx.normalized().dot(vex.normalized()) < 0) {
         w = vec.cross(vxc).norm() * 0.125;
-        vcx.dot(vex) / vcx.cross(vex).norm();
     } else {
         w = vec.dot(vec) * cotan * 0.125;
         atype = AngleType::Acute;
