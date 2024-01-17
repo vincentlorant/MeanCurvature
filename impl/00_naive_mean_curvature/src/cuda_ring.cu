@@ -14,7 +14,8 @@ double CudaRing::CurvatureTerm::NormalizeCurvature() { return k / (4.0 * w); }
 CudaRing::CudaRing(VertexId center, CudaEdge *edges, int edges_count)
     : center_(center), edges_(edges), edges_count_(edges_count) {}
 
-CudaRing::~CudaRing() { /*cudaFree(edges_);*/ }
+CudaRing::~CudaRing() { /*cudaFree(edges_);*/
+}
 
 void CudaRing::SetCenter(int center) { center_ = center; }
 
@@ -57,10 +58,13 @@ CudaRing::ComputeEdgeCurvature(int edge_idx, Eigen::Vector3d *positions,
     int ir = e.adjs[0];
     int il = e.adjs[1];
 
-    CurvatureData dl = GetCurvatureData(center_, ie, ir, positions);
-    CurvatureData dr = GetCurvatureData(center_, ie, il, positions);
+    auto pc = positions[center_];
+    auto pe = positions[ie];
 
-    const auto pcpi = positions[center_] - positions[ie];
+    CurvatureData dl = GetCurvatureData(pc, pe, positions[il]);
+    CurvatureData dr = GetCurvatureData(pc, pe, positions[ir]);
+
+    const auto pcpi = pc - pe;
     double forshortening = pcpi.dot(normals[center_]);
     double wk = 0.0;
 
@@ -78,34 +82,28 @@ CudaRing::ComputeEdgeCurvature(int edge_idx, Eigen::Vector3d *positions,
     return {wk, dr.area + dl.area};
 }
 
-CudaRing::CurvatureData CudaRing::GetCurvatureData(VertexId ie, VertexId ia,
-                                                   VertexId ib,
-                                                   Eigen::Vector3d *positions) {
-    auto ieib = positions[ie] - positions[ib];
-    auto iaib = positions[ia] - positions[ib];
-    auto ibie = positions[ib] - positions[ie];
-    auto iaie = positions[ia] - positions[ie];
-    auto ieia = positions[ie] - positions[ia];
-    auto ibia = positions[ib] - positions[ia];
-
-    auto ibie_n = ibie.normalized();
-    auto iaie_n = iaie.normalized();
-    auto ieib_n = ieib.normalized();
-    auto iaib_n = iaib.normalized();
-    auto ieia_n = ieia.normalized();
-    auto ibia_n = ibia.normalized();
+CudaRing::CurvatureData CudaRing::GetCurvatureData(const Eigen::Vector3d &pc,
+                                                   const Eigen::Vector3d &pe,
+                                                   const Eigen::Vector3d &px) {
+    auto vcx = pc - px;
+    auto vex = pe - px;
+    auto vxc = px - pc;
+    auto vec = pe - pc;
+    auto vce = pc - pe;
+    auto vxe = px - pe;
 
     double epsilon = 0.0001;
     double w = 0.;
     AngleType atype = AngleType::Obtuse;
-    double cotan = ieib.dot(iaib) / ieib.cross(iaib).norm();
+    double cotan = vcx.dot(vex) / vcx.cross(vex).norm();
 
-    if (iaie_n.dot(ibie_n) < epsilon) {
-        w = iaie.cross(ibie).norm() * 0.25;
-    } else if (ieia_n.dot(ibia_n) < epsilon || ieib_n.dot(iaib_n) < epsilon) {
-        w = iaie.cross(ibie).norm() * 0.125;
+    if (vec.normalized().dot(vxc.normalized()) < epsilon) {
+        w = vec.cross(vxc).norm() * 0.25;
+    } else if (vce.normalized().dot(vxe.normalized()) < epsilon ||
+               vcx.normalized().dot(vex.normalized()) < epsilon) {
+        w = vec.cross(vxc).norm() * 0.125;
     } else {
-        w = iaie.dot(iaie) * cotan * 0.125;
+        w = vec.dot(vec) * cotan * 0.125;
         atype = AngleType::Acute;
     }
 

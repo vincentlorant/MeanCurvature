@@ -58,7 +58,7 @@ class CudaRing {
                                                   Eigen::Vector3d *positions,
                                                   Eigen::Vector3d *normals);
 
-    __device__ CurvatureData GetCurvatureData(VertexId ie, VertexId ia,
-                                              VertexId ib,
-                                              Eigen::Vector3d *positions);
+    __device__ CurvatureData GetCurvatureData(const Eigen::Vector3d &pe,
+                                              const Eigen::Vector3d &pa,
+                                              const Eigen::Vector3d &pb);
 };
