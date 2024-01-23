@@ -1,0 +1,14 @@
+Avenues to improve the mean-curvature efficiency
+
+0. algorithm structure
+* reduce global memory access ?
+* divergence
+* shared memory (& bank conflicts)
+* streams
+
+1. mechanisms
+* double > float
+* intrinsic functions
+* read-only texture memory
+* kernel config
+* unrolling

@@ -166,7 +166,7 @@ int main(int argv, char **argc) {
     SetupLogger();
     int itr = argv > 1 ? std::stoi(argc[1]) : 50;
     auto filename = "../../assets/se_sub.ply";
-    auto mesh = GetMesh(filename, 0.01);
+    auto mesh = GetMesh(filename, 0.01, true);
     TimeIt(MeanCurvature(mesh, itr));
     open3d::visualization::DrawGeometries({mesh}, "debug", 1280, 720, 100, 100,
                                           true);
