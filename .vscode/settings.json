@@ -121,8 +121,11 @@
         "numericaldiff": "cpp",
         "openglsupport": "cpp",
         "specialfunctions": "cpp",
-        "splines": "cpp"
+        "splines": "cpp",
+        "__config": "cpp",
+        "__functional_base": "cpp",
+        "ios": "cpp"
     },
     // "C_Cpp.errorSquiggles": "disabled",
-    "cmake.sourceDirectory": "/home/vincent/Documents/GPGPU/blog/00_naive_mean_curvature"
+    "cmake.sourceDirectory": "/home/vincent/Documents/GPGPU/blog"
 }

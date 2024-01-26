@@ -62,6 +62,10 @@ template <typename T> class CudaRing {
     __device__ CurvatureData GetCurvatureData(const Vector &pe,
                                               const Vector &pa,
                                               const Vector &pb);
+
+    __device__ Vector Normalized(const Vector &v);
+
+    __device__ T Norm(const Vector &v);
 };
 
 extern template class CudaRing<double>;

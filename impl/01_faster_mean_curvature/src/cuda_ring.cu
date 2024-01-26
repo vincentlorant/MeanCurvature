@@ -6,12 +6,12 @@
 
 template <typename T>
 void CudaRing<T>::CurvatureTerm::operator+=(const CurvatureTerm &otr) {
-    k += otr.k;
-    w += otr.w;
+    k = __fadd_rn(k, otr.k);
+    w = __fadd_rn(w, otr.w);
 }
 
 template <typename T> T CudaRing<T>::CurvatureTerm::NormalizeCurvature() {
-    return k / (4.0 * w);
+    return __fdiv_rn(k, __fmul_rn(4.0, w));
 }
 
 template <typename T>
@@ -50,7 +50,7 @@ void CudaRing<T>::ComputeCurvature(Vector *positions, Vector *normals) {
         ct += ComputeEdgeCurvature(i, positions, normals);
     }
     T delta = ct.NormalizeCurvature();
-    delta = max(-0.5, min(0.5, delta));
+    delta = fmax(-0.5f, fmin(0.5f, delta));
     positions[center_] -= normals[center_] * delta;
 }
 
@@ -78,14 +78,16 @@ CudaRing<T>::CurvatureTerm CudaRing<T>::ComputeEdgeCurvature(int edge_idx,
         dr.angle_type == AngleType::Acute) {
         wk = (dr.cotan + dl.cotan) * forshortening;
     } else {
-        T k = 2 * forshortening / pcpi.dot(pcpi);
-        wk += dl.angle_type == AngleType::Acute ? dl.cotan * forshortening
-                                                : dl.area * k;
-        wk += dr.angle_type == AngleType::Acute ? dr.cotan * forshortening
-                                                : dr.area * k;
+        T k = __fdiv_rn(__fmul_rn(2, forshortening), pcpi.dot(pcpi));
+        wk += dl.angle_type == AngleType::Acute
+                  ? __fmul_rn(dl.cotan, forshortening)
+                  : __fmul_rn(dl.area, k);
+        wk += dr.angle_type == AngleType::Acute
+                  ? __fmul_rn(dr.cotan, forshortening)
+                  : __fmul_rn(dr.area, k);
     }
 
-    return {wk, dr.area + dl.area};
+    return {wk, __fadd_rn(dr.area, dl.area)};
 }
 
 template <typename T>
@@ -103,19 +105,35 @@ CudaRing<T>::CurvatureData CudaRing<T>::GetCurvatureData(const Vector &pc,
     AngleType atype = AngleType::Obtuse;
     T cotan = vcx.dot(vex) / vcx.cross(vex).norm();
 
-    if (vec.normalized().dot(vxc.normalized()) < 0) {
-        w = vec.cross(vxc).norm() * 0.25;
-    } else if (vce.normalized().dot(vxe.normalized()) < 0 ||
-               vcx.normalized().dot(vex.normalized()) < 0) {
-        w = vec.cross(vxc).norm() * 0.125;
+    if (Normalized(vec).dot(Normalized(vxc)) < 0) {
+        w = __fmul_rn(vec.cross(vxc).norm(), 0.25);
+    } else if (Normalized(vce).dot(Normalized(vxe)) < 0 ||
+               Normalized(vcx).dot(Normalized(vex)) < 0) {
+        w = __fmul_rn(vec.cross(vxc).norm(), 0.125);
     } else {
-        w = vec.dot(vec) * cotan * 0.125;
+        w = __fmul_rn(__fmul_rn(vec.dot(vec), cotan), 0.125);
         atype = AngleType::Acute;
     }
 
     return {w, cotan, atype};
 }
 
+template <typename T>
+CudaRing<T>::Vector CudaRing<T>::Normalized(const Vector &v) {
+    T norm = Norm(v);
+
+    return {__fdiv_rn(v(0), norm), __fdiv_rn(v(1), norm),
+            __fdiv_rn(v(2), norm)};
+}
+
+template <typename T> T CudaRing<T>::Norm(const Vector &v) {
+    T xx = __fmul_rn(v(0), v(0));
+    T yy = __fmul_rn(v(1), v(1));
+    T zz = __fmul_rn(v(2), v(2));
+
+    return __fadd_rn(__fadd_rn(xx, yy), zz);
+}
+
 // legal instantiations
-template CudaRing<double>;
-template CudaRing<float>;
+template class CudaRing<double>;
+template class CudaRing<float>;

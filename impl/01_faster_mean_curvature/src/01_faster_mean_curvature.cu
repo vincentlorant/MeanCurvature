@@ -208,9 +208,10 @@ void MeanCurvature(std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
 int main(int argv, char **argc) {
     SetupLogger();
     int itr = argv > 1 ? std::stoi(argc[1]) : 50;
+    float scalar = argv > 2 ? std::stof(argc[2]) : 0.035;
     auto filename = "../../assets/se_sub.ply";
     auto mesh = GetMesh(filename, 0.01, true);
-    TimeIt(MeanCurvature(mesh, itr));
+    TimeIt(MeanCurvature(mesh, itr, scalar));
     open3d::visualization::DrawGeometries({mesh}, "debug", 1280, 720, 100, 100,
                                           true);
 
