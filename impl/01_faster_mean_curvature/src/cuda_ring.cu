@@ -1,16 +1,16 @@
 #include "cuda_ring.h"
-#include "mean_curvature_types.h"
 
 #include <assert.h>
 #include <float.h>
+#include <limits>
 
 template <typename T>
-void CudaRing<T>::CurvatureTerm::operator+=(const CurvatureTerm &otr) {
+void CudaRing<T>::Curvature::operator+=(const Curvature &otr) {
     k = __fadd_rn(k, otr.k);
     w = __fadd_rn(w, otr.w);
 }
 
-template <typename T> T CudaRing<T>::CurvatureTerm::NormalizeCurvature() {
+template <typename T> T CudaRing<T>::Curvature::NormalizeCurvature() {
     return __fdiv_rn(k, __fmul_rn(4.0, w));
 }
 
@@ -20,18 +20,11 @@ CudaRing<T>::CudaRing(VertexId center, CudaEdge *edges, int edges_count)
 
 template <typename T> CudaRing<T>::~CudaRing() {}
 
-template <typename T> void CudaRing<T>::SetCenter(int center) {
-    center_ = center;
-}
+template <typename T> int CudaRing<T>::GetCenter() const { return center_; }
 
-template <typename T> void CudaRing<T>::AddEdge(int end, int adj1, int adj2) {
-    edges_[edges_count_++] = {end, adj1, adj2};
-}
-
-template <typename T> int CudaRing<T>::GetCenter() { return center_; }
-
-template <typename T> T CudaRing<T>::GetSmallestEdgeLength(Vector *positions) {
-    T smallest = DBL_MAX;
+template <typename T>
+T CudaRing<T>::GetSmallestEdgeLength(Vector *positions) const {
+    T smallest = std::numeric_limits<T>::max();
     for (int i = 0; i < edges_count_; i++) {
         const CudaEdge &e = edges_[i];
         T length = (positions[e.end] - positions[center_]).norm();
@@ -44,8 +37,8 @@ template <typename T> T CudaRing<T>::GetSmallestEdgeLength(Vector *positions) {
 }
 
 template <typename T>
-void CudaRing<T>::ComputeCurvature(Vector *positions, Vector *normals) {
-    CurvatureTerm ct;
+void CudaRing<T>::ComputeCurvature(Vector *positions, Vector *normals) const {
+    Curvature ct;
     for (int i = 0; i < edges_count_; i++) {
         ct += ComputeEdgeCurvature(i, positions, normals);
     }
@@ -55,11 +48,11 @@ void CudaRing<T>::ComputeCurvature(Vector *positions, Vector *normals) {
 }
 
 template <typename T>
-CudaRing<T>::CurvatureTerm CudaRing<T>::ComputeEdgeCurvature(int edge_idx,
-                                                             Vector *positions,
-                                                             Vector *normals) {
+CudaRing<T>::Curvature
+CudaRing<T>::ComputeEdgeCurvature(int edge_idx, Vector *positions,
+                                  Vector *normals) const {
     assert(edge_idx < edges_count_);
-    const CudaEdge &e = edges_[edge_idx];
+    const CudaEdge e = edges_[edge_idx];
     int ie = e.end;
     int ir = e.adjs[0];
     int il = e.adjs[1];
@@ -67,8 +60,8 @@ CudaRing<T>::CurvatureTerm CudaRing<T>::ComputeEdgeCurvature(int edge_idx,
     auto pc = positions[center_];
     auto pe = positions[ie];
 
-    CurvatureData dl = GetCurvatureData(pc, pe, positions[il]);
-    CurvatureData dr = GetCurvatureData(pc, pe, positions[ir]);
+    CurvatureData dl = ComputeCurvatureWeight(pc, pe, positions[il]);
+    CurvatureData dr = ComputeCurvatureWeight(pc, pe, positions[ir]);
 
     const auto pcpi = pc - pe;
     T forshortening = pcpi.dot(normals[center_]);
@@ -91,9 +84,9 @@ CudaRing<T>::CurvatureTerm CudaRing<T>::ComputeEdgeCurvature(int edge_idx,
 }
 
 template <typename T>
-CudaRing<T>::CurvatureData CudaRing<T>::GetCurvatureData(const Vector &pc,
-                                                         const Vector &pe,
-                                                         const Vector &px) {
+CudaRing<T>::CurvatureData
+CudaRing<T>::ComputeCurvatureWeight(const Vector &pc, const Vector &pe,
+                                    const Vector &px) const {
     auto vcx = pc - px;
     auto vex = pe - px;
     auto vxc = px - pc;
@@ -119,14 +112,14 @@ CudaRing<T>::CurvatureData CudaRing<T>::GetCurvatureData(const Vector &pc,
 }
 
 template <typename T>
-CudaRing<T>::Vector CudaRing<T>::Normalized(const Vector &v) {
+CudaRing<T>::Vector CudaRing<T>::Normalized(const Vector &v) const {
     T norm = Norm(v);
 
     return {__fdiv_rn(v(0), norm), __fdiv_rn(v(1), norm),
             __fdiv_rn(v(2), norm)};
 }
 
-template <typename T> T CudaRing<T>::Norm(const Vector &v) {
+template <typename T> T CudaRing<T>::Norm(const Vector &v) const {
     T xx = __fmul_rn(v(0), v(0));
     T yy = __fmul_rn(v(1), v(1));
     T zz = __fmul_rn(v(2), v(2));

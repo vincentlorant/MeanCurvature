@@ -24,3 +24,4 @@ inline void gpuAssert(cudaError_t code, const char *file, int line,
     if (cerror != cudaSuccess) {                                               \
         printf("Error: %s\n", cudaGetErrorString(cerror));                     \
     }
+

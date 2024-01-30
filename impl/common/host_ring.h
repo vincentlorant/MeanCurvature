@@ -8,7 +8,7 @@
 #include <open3d/Open3D.h>
 
 #include "cuda_ring.h"
-#include "mean_curvature_types.h"
+#include "types.h"
 
 class HostRing {
   public:
@@ -20,10 +20,6 @@ class HostRing {
         bool Complete() const;
     };
 
-  private:
-    std::unordered_map<VertexId, EdgeData> edges_;
-    VertexId center_;
-
   public:
     void AddCenter(VertexId id);
 
@@ -33,15 +29,22 @@ class HostRing {
 
     const std::unordered_map<VertexId, EdgeData> &GetEdges() const;
 
-    // d_edges is expected to be a pointer to edges array allocated on the
-    // device; all ring complete edges should be included in the array
-    CudaRing ToCudaRing(CudaRing::CudaEdge *d_edges) const;
-
     size_t GetCompleteEdgeCount() const;
 
-    // happen when mesh is not closed
+    // happens when input meshes are not closed
     std::vector<int> CheckForIncompleteEdges() const;
+
+  private:
+    std::unordered_map<VertexId, EdgeData> edges_;
+    VertexId center_ = -1;
 };
+
+/*
+ * d_edges is expected to be a pointer to edges array allocated on the
+ * device; all ring complete edges should be included in the array
+ */
+template <typename T>
+CudaRing<T> ToCudaRing(const HostRing &ring, CudaEdge *d_edges);
 
 using HostRingsMap = tbb::concurrent_hash_map<int, HostRing>;
 

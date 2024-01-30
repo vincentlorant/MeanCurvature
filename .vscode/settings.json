@@ -130,5 +130,7 @@
         "__tuple": "cpp"
     },
     // "C_Cpp.errorSquiggles": "disabled",
-    "cmake.sourceDirectory": "/home/vincent/Documents/GPGPU/blog"
+    "cmake.sourceDirectory": "/home/vincent/Documents/GPGPU/blog",
+    "editor.formatOnSave": true,
+    "clang-format.executable": "/usr/bin/clang-format"
 }

@@ -1,5 +1,5 @@
 #include "cuda_ring.h"
-#include "mean_curvature_types.h"
+#include "types.h"
 
 #include <assert.h>
 #include <float.h>

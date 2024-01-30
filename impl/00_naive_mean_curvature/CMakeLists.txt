@@ -1,14 +1,11 @@
 find_package(CUDA REQUIRED)
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
+
 set(00_naive_mean_curvature_headers
-    src/mean_curvature_types.h
-    src/cuda_helpers.h
-    src/cuda_ring.h
-    src/host_ring.h)
+    src/cuda_ring.h)
 
 set(00_naive_mean_curvature_sources
     src/cuda_ring.cu
-    src/host_ring.cu
+    ../common/host_ring.cu
     src/00_naive_mean_curvature.cu)
 
 cuda_add_executable(00_naive_mean_curvature 
@@ -19,7 +16,7 @@ set_target_properties(00_naive_mean_curvature PROPERTIES CUDA_SEPARABLE_COMPILAT
 set_target_properties(00_naive_mean_curvature PROPERTIES CUDA_STANDARD 17)
 
 target_include_directories(00_naive_mean_curvature PRIVATE
-    "../utils")
+    "../common")
 
 target_add_open3d(00_naive_mean_curvature)
 target_add_common_libs(00_naive_mean_curvature)

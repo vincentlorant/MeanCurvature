@@ -8,6 +8,7 @@
 #include <string>
 
 #include <cuda_runtime.h>
+#include <oneapi/tbb.h>
 
 #define time_duration std::chrono::duration_cast<std::chrono::milliseconds>
 #define TimeIt(func)                                                           \
@@ -51,6 +52,7 @@ GetMesh(const std::string &filename, float noise_scale = 0.01,
         float rnd = (float)std::rand() / RAND_MAX;
         pmesh->vertices_[i] += pmesh->vertex_normals_[i] * rnd * noise_scale;
     }
+
     pmesh->ComputeVertexNormals();
 
     if (debug) {

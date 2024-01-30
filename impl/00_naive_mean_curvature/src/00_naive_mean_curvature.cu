@@ -9,7 +9,7 @@
 #include "cuda_ring.h"
 #include "helpers.hpp"
 #include "host_ring.h"
-#include "mean_curvature_types.h"
+#include "types.h"
 
 __global__ void OptimizeMeanCurvature(CudaRing *rings, int n,
                                       Eigen::Vector3d *positions,
@@ -114,7 +114,7 @@ CopyMeshDataToDevice(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
     return {d_vertices, d_normals, vec_mem_size};
 }
 
-void MeanCurvature(std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
+void MeanCurvatureSmoothing(std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
                    int itr = 50, double scalar = 0.035) {
     auto [d_cuda_rings, d_edges] = GetCudaRingsAndEdges(mesh);
     auto [d_vertices, d_normals, mem_size] = CopyMeshDataToDevice(mesh);
@@ -168,7 +168,7 @@ int main(int argv, char **argc) {
     auto filename = "../../assets/se_sub.ply";
     auto mesh = GetMesh(filename, 0.01, false);
     LOG(INFO) << mesh->vertices_.size();
-    TimeIt(MeanCurvature(mesh, itr));
+    TimeIt(MeanCurvatureSmoothing(mesh, itr));
     // open3d::visualization::DrawGeometries({mesh}, "debug", 1280, 720, 100,
     // 100,
     //                                       true);

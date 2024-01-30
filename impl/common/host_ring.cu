@@ -7,7 +7,6 @@
 
 #include "cuda_helpers.h"
 #include "cuda_ring.h"
-#include "mean_curvature_types.h"
 
 void HostRing::EdgeData::AddAdj(const VertexId &id) {
     uint8_t array_num = sizeof(adjs) / sizeof(adjs[0]);
