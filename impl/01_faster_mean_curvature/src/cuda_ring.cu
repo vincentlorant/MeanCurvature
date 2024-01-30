@@ -50,7 +50,7 @@ void CudaRing<T>::ComputeCurvature(Vector *positions, Vector *normals) {
         ct += ComputeEdgeCurvature(i, positions, normals);
     }
     T delta = ct.NormalizeCurvature();
-    delta = fmax(-0.5f, fmin(0.5f, delta));
+    delta = max(-0.5f, min(0.5f, delta));
     positions[center_] -= normals[center_] * delta;
 }
 

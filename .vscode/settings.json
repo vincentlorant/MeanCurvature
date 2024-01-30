@@ -124,7 +124,10 @@
         "splines": "cpp",
         "__config": "cpp",
         "__functional_base": "cpp",
-        "ios": "cpp"
+        "ios": "cpp",
+        "__memory": "cpp",
+        "__functional_base_03": "cpp",
+        "__tuple": "cpp"
     },
     // "C_Cpp.errorSquiggles": "disabled",
     "cmake.sourceDirectory": "/home/vincent/Documents/GPGPU/blog"
