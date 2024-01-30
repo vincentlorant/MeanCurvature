@@ -42,15 +42,15 @@ double GetSmallestEdgeLength(CudaRing *d_cuda_rings, size_t nrings,
                              dim3 grid_size, dim3 block_size) {
     double *d_small_values;
     size_t values_mem_size = sizeof(double) * vertices_num;
-    cudaCheck(cudaMalloc(&d_small_values, values_mem_size));
+    cuCheck(cudaMalloc(&d_small_values, values_mem_size));
     GetSmallestEdgesLengths<<<grid_size, block_size>>>(
         d_cuda_rings, nrings, d_vertices, d_small_values);
 
-    cudaCheck(cudaDeviceSynchronize());
+    cuCheck(cudaDeviceSynchronize());
     std::vector<double> smalls(vertices_num, 0);
     cudaMemcpy(smalls.data(), d_small_values, values_mem_size,
                cudaMemcpyKind::cudaMemcpyDeviceToHost);
-    cudaCheck(cudaFree(d_small_values));
+    cuCheck(cudaFree(d_small_values));
 
     return *std::min_element(smalls.begin(), smalls.end());
 }
@@ -79,8 +79,8 @@ GetCudaRingsAndEdges(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
     assert(c == edges_count);
     CudaRing::CudaEdge *d_edges;
     size_t mem_size = sizeof(CudaRing::CudaEdge) * edges_count;
-    cudaCheck(cudaMalloc(&d_edges, mem_size));
-    cudaCheck(cudaMemcpy(d_edges, edges.get(), mem_size,
+    cuCheck(cudaMalloc(&d_edges, mem_size));
+    cuCheck(cudaMemcpy(d_edges, edges.get(), mem_size,
                          cudaMemcpyKind::cudaMemcpyHostToDevice));
 
     // create cuda rings
@@ -91,8 +91,8 @@ GetCudaRingsAndEdges(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
     }
     CudaRing *d_cuda_rings;
     size_t ring_mem_size = (sizeof(CudaRing) * nrings);
-    cudaCheck(cudaMalloc(&d_cuda_rings, ring_mem_size));
-    cudaCheck(cudaMemcpy(d_cuda_rings, cuda_rings.data(), ring_mem_size,
+    cuCheck(cudaMalloc(&d_cuda_rings, ring_mem_size));
+    cuCheck(cudaMemcpy(d_cuda_rings, cuda_rings.data(), ring_mem_size,
                          cudaMemcpyKind::cudaMemcpyHostToDevice));
 
     return {d_cuda_rings, d_edges};
@@ -104,11 +104,11 @@ CopyMeshDataToDevice(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
     Eigen::Vector3d *d_vertices;
     Eigen::Vector3d *d_normals;
     size_t vec_mem_size = sizeof(Eigen::Vector3d) * vertices_num;
-    cudaCheck(cudaMalloc(&d_vertices, vec_mem_size));
-    cudaCheck(cudaMalloc(&d_normals, vec_mem_size));
-    cudaCheck(cudaMemcpy(d_vertices, mesh->vertices_.data(), vec_mem_size,
+    cuCheck(cudaMalloc(&d_vertices, vec_mem_size));
+    cuCheck(cudaMalloc(&d_normals, vec_mem_size));
+    cuCheck(cudaMemcpy(d_vertices, mesh->vertices_.data(), vec_mem_size,
                          cudaMemcpyKind::cudaMemcpyHostToDevice));
-    cudaCheck(cudaMemcpy(d_normals, mesh->vertex_normals_.data(), vec_mem_size,
+    cuCheck(cudaMemcpy(d_normals, mesh->vertex_normals_.data(), vec_mem_size,
                          cudaMemcpyKind::cudaMemcpyHostToDevice));
 
     return {d_vertices, d_normals, vec_mem_size};
@@ -148,15 +148,15 @@ void MeanCurvature(std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
     // Scale back vertices to original values
     ScalePositions<<<grid_size, block_size>>>(d_vertices, vertices_num,
                                               1.0 / scalar_fix);
-    cudaCheck(cudaDeviceSynchronize());
+    cuCheck(cudaDeviceSynchronize());
 
     // Get back updated vertices to host
-    cudaCheck(cudaMemcpy(mesh->vertices_.data(), d_vertices, mem_size,
+    cuCheck(cudaMemcpy(mesh->vertices_.data(), d_vertices, mem_size,
                          cudaMemcpyKind::cudaMemcpyDeviceToHost));
-    cudaCheck(cudaFree(d_cuda_rings));
-    cudaCheck(cudaFree(d_edges));
-    cudaCheck(cudaFree(d_vertices));
-    cudaCheck(cudaFree(d_normals));
+    cuCheck(cudaFree(d_cuda_rings));
+    cuCheck(cudaFree(d_edges));
+    cuCheck(cudaFree(d_vertices));
+    cuCheck(cudaFree(d_normals));
 
     // Update normals with new vertices
     mesh->ComputeVertexNormals();
