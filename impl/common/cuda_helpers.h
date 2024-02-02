@@ -25,3 +25,16 @@ inline void gpuAssert(cudaError_t code, const char *file, int line,
         printf("Error: %s\n", cudaGetErrorString(cerror));                     \
     }
 
+#define TimeCudaEvent(func, itr)                                               \
+    cudaEvent_t start, stop;                                                   \
+    cudaEventCreate(&start);                                                   \
+    cudaEventCreate(&stop);                                                    \
+    cudaEventRecord(start);                                                    \
+    func;                                                                      \
+    cudaEventRecord(stop);                                                     \
+    cudaEventSynchronize(stop);                                                \
+    float time;                                                                \
+    cudaEventElapsedTime(&time, start, stop);                                  \
+    cudaEventDestroy(start);                                                   \
+    cudaEventDestroy(stop);                                                    \
+    LOG(INFO) << "kernel avg time:" << (time / itr) << "ms";

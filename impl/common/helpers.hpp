@@ -2,13 +2,12 @@
 
 #include <chrono>
 #include <filesystem>
-#include <glog/logging.h>
 #include <memory>
-#include <open3d/Open3D.h>
 #include <string>
 
-#include <cuda_runtime.h>
+#include <glog/logging.h>
 #include <oneapi/tbb.h>
+#include <open3d/Open3D.h>
 
 #define time_duration std::chrono::duration_cast<std::chrono::milliseconds>
 #define TimeIt(func)                                                           \
@@ -16,20 +15,6 @@
     func;                                                                      \
     auto t2 = std::chrono::high_resolution_clock::now();                       \
     LOG(INFO) << time_duration(t2 - t1).count() << "ms";
-
-#define TimeCudaEvent(func, itr)                                               \
-    cudaEvent_t start, stop;                                                   \
-    cudaEventCreate(&start);                                                   \
-    cudaEventCreate(&stop);                                                    \
-    cudaEventRecord(start);                                                    \
-    func;                                                                      \
-    cudaEventRecord(stop);                                                     \
-    cudaEventSynchronize(stop);                                                \
-    float time;                                                                \
-    cudaEventElapsedTime(&time, start, stop);                                  \
-    cudaEventDestroy(start);                                                   \
-    cudaEventDestroy(stop);                                                    \
-    LOG(INFO) << "kernel avg time:" << (time / itr) << "ms";
 
 void ApplyNoise(std::shared_ptr<open3d::geometry::TriangleMesh> pmesh,
                 float noise) {
@@ -60,8 +45,7 @@ GetMesh(const std::string &filename, float noise = 0.01, bool debug = true,
 
     if (debug) {
         pmesh->PaintUniformColor(color);
-        open3d::visualization::DrawGeometries({pmesh}, "debug", 1280, 720, 100,
-                                              100);
+        open3d::visualization::DrawGeometries({pmesh});
     }
 
     return pmesh;

@@ -12,9 +12,6 @@ cuda_add_executable(00_naive_mean_curvature
     ${00_naive_mean_curvature_headers}
     ${00_naive_mean_curvature_sources})
 
-set_target_properties(00_naive_mean_curvature PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-set_target_properties(00_naive_mean_curvature PROPERTIES CUDA_STANDARD 17)
-
 target_include_directories(00_naive_mean_curvature PRIVATE
     "../common")
 

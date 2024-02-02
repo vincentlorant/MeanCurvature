@@ -1,5 +1,4 @@
 function(target_add_open3d target_name)
-    message("---- Adding open3d to: ${target_name}")
     # The options need to be the same as Open3D's default
     # If Open3D is configured and built with custom options, you'll also need to
     # specify the same custom options.
