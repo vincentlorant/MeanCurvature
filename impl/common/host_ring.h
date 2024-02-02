@@ -7,7 +7,6 @@
 #include <oneapi/tbb/concurrent_hash_map.h>
 #include <open3d/Open3D.h>
 
-#include "cuda_ring.h"
 #include "types.h"
 
 class HostRing {
@@ -17,15 +16,18 @@ class HostRing {
         uint8_t count = 0;
 
         void AddAdj(const VertexId &id);
+        void AddAdj(const VertexId &id, const VertexId &pos);
         bool Complete() const;
     };
 
   public:
     void AddCenter(VertexId id);
 
-    inline VertexId GetCenter() const;
+    VertexId GetCenter() const;
 
     void AddEdge(VertexId edge_id, VertexId adj);
+
+    void AddEdge(VertexId edge_id, VertexId adj, const VertexId &pos);
 
     const std::unordered_map<VertexId, EdgeData> &GetEdges() const;
 
@@ -38,13 +40,6 @@ class HostRing {
     std::unordered_map<VertexId, EdgeData> edges_;
     VertexId center_ = -1;
 };
-
-/*
- * d_edges is expected to be a pointer to edges array allocated on the
- * device; all ring complete edges should be included in the array
- */
-template <typename T>
-CudaRing<T> ToCudaRing(const HostRing &ring, CudaEdge *d_edges);
 
 using HostRingsMap = tbb::concurrent_hash_map<int, HostRing>;
 

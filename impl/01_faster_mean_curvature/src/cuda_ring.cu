@@ -48,6 +48,22 @@ void CudaRing<T>::ComputeCurvature(Vector *positions, Vector *normals) const {
 }
 
 template <typename T>
+void CudaRing<T>::UpdateCenterNormal(Vector *positions, Vector *normals) const {
+    Vector sum = Vector::Zero();
+
+    for (int i = 0; i < edges_count_; i++) {
+        const CudaEdge e = edges_[i];
+        int ie = e.end;
+        int ia = e.adjs[0];
+        Vector pc = positions[center_];
+        Vector pe = positions[ie] - pc;
+        Vector pa = positions[ia] - pc;
+        sum += pa.cross(pe);
+    }
+    normals[center_] = sum.normalized();
+}
+
+template <typename T>
 CudaRing<T>::Curvature
 CudaRing<T>::ComputeEdgeCurvature(int edge_idx, Vector *positions,
                                   Vector *normals) const {

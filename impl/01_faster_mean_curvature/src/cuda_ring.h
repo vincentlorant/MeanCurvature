@@ -50,6 +50,9 @@ template <typename T> class CudaRing {
 
     __device__ void ComputeCurvature(Vector *positions, Vector *normals) const;
 
+    __device__ void UpdateCenterNormal(Vector *positions,
+                                       Vector *normals) const;
+
   private:
     __device__ Curvature ComputeEdgeCurvature(int edge_idx, Vector *positions,
                                               Vector *normals) const;

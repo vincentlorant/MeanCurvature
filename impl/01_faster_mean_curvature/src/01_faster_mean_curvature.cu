@@ -12,9 +12,9 @@
 #include "host_ring.h"
 
 template <typename T>
-__global__ void MeanCurvatureKernel(CudaRing<T> *rings, int n,
-                                    typename CudaRing<T>::Vector *positions,
-                                    typename CudaRing<T>::Vector *normals) {
+__global__ void MeanCurvature(CudaRing<T> *rings, int n,
+                              typename CudaRing<T>::Vector *positions,
+                              typename CudaRing<T>::Vector *normals) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i < n) {
         rings[i].ComputeCurvature(positions, normals);
@@ -22,8 +22,18 @@ __global__ void MeanCurvatureKernel(CudaRing<T> *rings, int n,
 }
 
 template <typename T>
-__global__ void AddAmountKernel(typename CudaRing<T>::Vector *arr, int n,
-                                float amount) {
+__global__ void UpdateNormals(CudaRing<T> *rings, int n,
+                              typename CudaRing<T>::Vector *positions,
+                              typename CudaRing<T>::Vector *normals) {
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i < n) {
+        rings[i].UpdateCenterNormal(positions, normals);
+    }
+}
+
+template <typename T>
+__global__ void AddAmount(typename CudaRing<T>::Vector *arr, int n,
+                          float amount) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i < n) {
         arr[i] *= amount;
@@ -57,29 +67,41 @@ CopyMeshDataToDevice(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
  * we have to convert vertices and normal before to copy them to device
  * allocated arrays
  */
+
+std::vector<Eigen::Vector3f> MapDtoF(std::vector<Eigen::Vector3d> &input) {
+    size_t n = input.size();
+    Eigen::Map<Eigen::Matrix3Xd> v(input[0].data(), 3, n);
+
+    return std::vector<Eigen::Vector3f>(v.cast<float>().colwise().begin(),
+                                        v.cast<float>().colwise().end());
+}
+
 template <typename T = float, typename = typename std::enable_if<
                                   std::is_same<T, float>::value>::type>
 std::tuple<Eigen::Vector3f *, Eigen::Vector3f *, size_t>
 CopyMeshDataToDevice(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
     size_t n = mesh->vertices_.size();
-    Eigen::Map<Eigen::Matrix3Xd> vi(mesh->vertices_[0].data(), 3, n);
-    Eigen::Map<Eigen::Matrix3Xd> ni(mesh->vertex_normals_[0].data(), 3, n);
-    std::vector<Eigen::Vector3f> vf(vi.cast<float>().colwise().begin(),
-                                    vi.cast<float>().colwise().end());
-    std::vector<Eigen::Vector3f> nf(ni.cast<float>().colwise().begin(),
-                                    ni.cast<float>().colwise().end());
-
     Eigen::Vector3f *d_vertices;
     Eigen::Vector3f *d_normals;
     size_t vec_mem_size = sizeof(Eigen::Vector3f) * n;
     cuCheck(cudaMalloc(&d_vertices, vec_mem_size));
     cuCheck(cudaMalloc(&d_normals, vec_mem_size));
-    cuCheck(cudaMemcpy(d_vertices, vf.data(), vec_mem_size,
-                       cudaMemcpyKind::cudaMemcpyHostToDevice));
-    cuCheck(cudaMemcpy(d_normals, nf.data(), vec_mem_size,
-                       cudaMemcpyKind::cudaMemcpyHostToDevice));
+    cuCheck(cudaMemcpy(d_vertices, MapDtoF(mesh->vertices_).data(),
+                       vec_mem_size, cudaMemcpyKind::cudaMemcpyHostToDevice));
+    cuCheck(cudaMemcpy(d_normals, MapDtoF(mesh->vertex_normals_).data(),
+                       vec_mem_size, cudaMemcpyKind::cudaMemcpyHostToDevice));
 
     return {d_vertices, d_normals, vec_mem_size};
+}
+
+/*
+ * d_edges is expected to be a pointer to edges array allocated on the
+ * device; all ring complete edges should be included in the array
+ */
+template <typename T>
+CudaRing<T> ToCudaRing(const HostRing &ring, CudaEdge *d_edges) {
+
+    return CudaRing<T>(ring.GetCenter(), d_edges, ring.GetCompleteEdgeCount());
 }
 
 // define cuda rings and edges and copy them to device
@@ -125,17 +147,23 @@ GetCudaRingsAndEdges(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
     return {d_cuda_rings, d_edges};
 }
 
-void UpdateMeshVertices(std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
-                        const std::vector<Eigen::Vector3d> &vertices) {
-    mesh->vertices_ = vertices;
+std::vector<Eigen::Vector3d> CopyDataToHost(Eigen::Vector3d *d_arr, size_t n) {
+    std::vector<typename Eigen::Vector3d> v(n);
+    size_t mem_size = sizeof(Eigen::Vector3d) * n;
+    cuCheck(cudaMemcpy(v.data(), d_arr, mem_size,
+                       cudaMemcpyKind::cudaMemcpyDeviceToHost));
+    return v;
 }
 
-void UpdateMeshVertices(std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
-                        std::vector<Eigen::Vector3f> &vertices) {
-    Eigen::Map<Eigen::Matrix3Xf> vi(vertices[0].data(), 3, vertices.size());
+std::vector<Eigen::Vector3d> CopyDataToHost(Eigen::Vector3f *d_arr, size_t n) {
+    std::vector<typename Eigen::Vector3f> v(n);
+    size_t mem_size = sizeof(Eigen::Vector3f) * n;
+    cuCheck(cudaMemcpy(v.data(), d_arr, mem_size,
+                       cudaMemcpyKind::cudaMemcpyDeviceToHost));
+    Eigen::Map<Eigen::Matrix3Xf> vd(v[0].data(), 3, v.size());
 
-    mesh->vertices_ = std::vector<Eigen::Vector3d>(
-        vi.cast<double>().colwise().begin(), vi.cast<double>().colwise().end());
+    return std::vector<Eigen::Vector3d>(vd.cast<double>().colwise().begin(),
+                                        vd.cast<double>().colwise().end());
 }
 
 template <typename T>
@@ -176,6 +204,8 @@ template <typename T>
 void MeanCurvatureSmoothing(
     std::shared_ptr<open3d::geometry::TriangleMesh> mesh, int itr = 50,
     float scale_factor = 0.035) {
+
+    //
     auto [d_cuda_rings, d_edges] = GetCudaRingsAndEdges<T>(mesh);
     auto [d_vertices, d_normals, mem_size] = CopyMeshDataToDevice<T>(mesh);
     // Cuda kernel config
@@ -187,31 +217,30 @@ void MeanCurvatureSmoothing(
     T smallest_edge_length =
         GetSmallestEdgeLength<T>(d_cuda_rings, vertices_num, d_vertices,
                                  vertices_num, grid_size, block_size);
+
     T scalar_fix = scale_factor / smallest_edge_length;
-    AddAmountKernel<T>
+    AddAmount<T>
         <<<grid_size.x, block_size>>>(d_vertices, vertices_num, scalar_fix);
 
     // Optimize
     auto f = [&](auto d_cuda_rings, auto d_vertices, auto d_normals) {
         for (int i = 0; i < itr; i++) {
-            MeanCurvatureKernel<T><<<grid_size, block_size>>>(
+            MeanCurvature<T><<<grid_size, block_size>>>(
                 d_cuda_rings, vertices_num, d_vertices, d_normals);
         }
     };
     TimeCudaEvent(f(d_cuda_rings, d_vertices, d_normals), itr);
 
+    UpdateNormals<T><<<grid_size, block_size>>>(d_cuda_rings, vertices_num,
+                                                d_vertices, d_normals);
+
     // Scale back vertices to original values
-    AddAmountKernel<T><<<grid_size.x, block_size>>>(d_vertices, vertices_num,
-                                                    1.0 / scalar_fix);
+    AddAmount<T><<<grid_size.x, block_size>>>(d_vertices, vertices_num,
+                                              1.0 / scalar_fix);
     cuCheck(cudaDeviceSynchronize());
 
-    // Update mesh vertices with device data
-    cuCheck(cudaMemcpy(mesh->vertices_.data(), d_vertices, mem_size,
-                       cudaMemcpyKind::cudaMemcpyDeviceToHost));
-    std::vector<typename CudaRing<T>::Vector> vertices(vertices_num);
-    cuCheck(cudaMemcpy(vertices.data(), d_vertices, mem_size,
-                       cudaMemcpyKind::cudaMemcpyDeviceToHost));
-    UpdateMeshVertices(mesh, vertices);
+    mesh->vertices_ = CopyDataToHost(d_vertices, vertices_num);
+    mesh->vertex_normals_ = CopyDataToHost(d_normals, vertices_num);
 
     // clean allocated device data
     cuCheck(cudaFree(d_cuda_rings));
@@ -219,8 +248,13 @@ void MeanCurvatureSmoothing(
     cuCheck(cudaFree(d_vertices));
     cuCheck(cudaFree(d_normals));
 
-    // Update normals using new vertices position
-    mesh->ComputeVertexNormals();
+    // update normals
+    for (size_t i = 0; i < mesh->triangles_.size(); i++) {
+        auto &triangle = mesh->triangles_[i];
+        mesh->triangle_normals_[i] = mesh->vertex_normals_[triangle(0)] +
+                                     mesh->vertex_normals_[triangle(1)] +
+                                     mesh->vertex_normals_[triangle(2)];
+    }
 }
 
 int main(int argv, char **argc) {
@@ -230,7 +264,7 @@ int main(int argv, char **argc) {
     float scale_factor = argv > 2 ? std::stof(argc[2]) : 0.035;
     auto filename = "../../assets/se_sub.ply";
     // run algorithm
-    auto mesh = GetMesh(filename, 0.01, false);
+    auto mesh = GetMesh(filename, 0.01, true);
     TimeIt(MeanCurvatureSmoothing<float>(mesh, itr, scale_factor));
     // vizualize
     open3d::visualization::DrawGeometries({mesh}, "debug", 1280, 720, 100, 100,

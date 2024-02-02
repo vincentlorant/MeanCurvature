@@ -6,12 +6,17 @@
 #include <vector>
 
 #include "cuda_helpers.h"
-#include "cuda_ring.h"
 
 void HostRing::EdgeData::AddAdj(const VertexId &id) {
-    uint8_t array_num = sizeof(adjs) / sizeof(adjs[0]);
-    if (count < array_num) {
+    if (count < 2) {
         adjs[count++] = id;
+    }
+}
+
+void HostRing::EdgeData::AddAdj(const VertexId &id, const VertexId &pos) {
+    if (pos < 2) {
+        adjs[pos] = id;
+        count++;
     }
 }
 
@@ -26,6 +31,13 @@ void HostRing::AddEdge(VertexId edge_id, VertexId adj) {
         edges_[edge_id] = EdgeData();
     }
     edges_[edge_id].AddAdj(adj);
+}
+
+void HostRing::AddEdge(VertexId edge_id, VertexId adj, const VertexId &pos) {
+    if (edges_.find(edge_id) == edges_.end()) {
+        edges_[edge_id] = EdgeData();
+    }
+    edges_[edge_id].AddAdj(adj, pos);
 }
 
 const std::unordered_map<VertexId, HostRing::EdgeData> &
@@ -55,23 +67,14 @@ std::vector<int> HostRing::CheckForIncompleteEdges() const {
     return incompletes;
 }
 
-template <typename T>
-CudaRing<T> ToCudaRing(const HostRing &ring, CudaEdge *d_edges) {
-
-    return CudaRing<T>(ring.GetCenter(), d_edges, ring.GetCompleteEdgeCount());
-}
-
-template CudaRing<float> ToCudaRing(const HostRing &ring, CudaEdge *d_edges);
-template CudaRing<double> ToCudaRing(const HostRing &ring, CudaEdge *d_edges);
-
 void AddEdges(HostRingsMap &ids_neighbors, HostRingsMap::accessor &ac,
               const VertexId &a, const VertexId &b, const VertexId &c) {
     if (!ids_neighbors.find(ac, a)) {
         ids_neighbors.insert(ac, a);
         ac->second.AddCenter(a);
     }
-    ac->second.AddEdge(b, c);
-    ac->second.AddEdge(c, b);
+    ac->second.AddEdge(b, c, 1);
+    ac->second.AddEdge(c, b, 0);
 }
 
 HostRingsMap
@@ -83,7 +86,7 @@ CreateHostRings(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
         auto &t = triangles[i];
         HostRingsMap::accessor ac;
         AddEdges(ids_neighbors, ac, t[0], t[1], t[2]);
-        AddEdges(ids_neighbors, ac, t[1], t[0], t[2]);
+        AddEdges(ids_neighbors, ac, t[1], t[2], t[0]);
         AddEdges(ids_neighbors, ac, t[2], t[0], t[1]);
     };
 

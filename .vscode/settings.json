@@ -127,7 +127,8 @@
         "ios": "cpp",
         "__memory": "cpp",
         "__functional_base_03": "cpp",
-        "__tuple": "cpp"
+        "__tuple": "cpp",
+        "target": "cpp"
     },
     // "C_Cpp.errorSquiggles": "disabled",
     "cmake.sourceDirectory": "/home/vincent/Documents/GPGPU/blog",

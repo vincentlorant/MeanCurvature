@@ -31,6 +31,15 @@
     cudaEventDestroy(stop);                                                    \
     LOG(INFO) << "kernel avg time:" << (time / itr) << "ms";
 
+void ApplyNoise(std::shared_ptr<open3d::geometry::TriangleMesh> pmesh,
+                float noise) {
+    pmesh->ComputeVertexNormals();
+    for (int i = 0; i < pmesh->vertices_.size(); i++) {
+        float rnd = (float)std::rand() / RAND_MAX;
+        pmesh->vertices_[i] += pmesh->vertex_normals_[i] * rnd * noise;
+    }
+}
+
 void SetupLogger() {
     google::InitGoogleLogging("mean_curvature");
     FLAGS_alsologtostderr = 1;
@@ -38,21 +47,15 @@ void SetupLogger() {
 }
 
 std::shared_ptr<open3d::geometry::TriangleMesh>
-GetMesh(const std::string &filename, float noise_scale = 0.01,
-        bool debug = true, Eigen::Vector3d color = {0.3, 0.5, 0.4}) {
+GetMesh(const std::string &filename, float noise = 0.01, bool debug = true,
+        Eigen::Vector3d color = {0.3, 0.5, 0.4}) {
     if (std::filesystem::exists(filename) == false) {
         LOG(FATAL) << "Invalid mesh file:" << filename;
     }
     open3d::geometry::TriangleMesh mesh;
     open3d::io::ReadTriangleMesh(filename, mesh);
     auto pmesh = std::make_shared<open3d::geometry::TriangleMesh>(mesh);
-    pmesh->ComputeVertexNormals();
-
-    for (int i = 0; i < pmesh->vertices_.size(); i++) {
-        float rnd = (float)std::rand() / RAND_MAX;
-        pmesh->vertices_[i] += pmesh->vertex_normals_[i] * rnd * noise_scale;
-    }
-
+    ApplyNoise(pmesh, noise);
     pmesh->ComputeVertexNormals();
 
     if (debug) {
