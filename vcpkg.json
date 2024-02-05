@@ -4,6 +4,7 @@
   "dependencies": [
     "tbb",
     "eigen3",
-    "glog"
+    "glog",
+    "argparse"
   ]
 }

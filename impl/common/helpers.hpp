@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 
+#include <argparse/argparse.hpp>
 #include <glog/logging.h>
 #include <oneapi/tbb.h>
 #include <open3d/Open3D.h>
@@ -23,6 +24,35 @@ void ApplyNoise(std::shared_ptr<open3d::geometry::TriangleMesh> pmesh,
         float rnd = (float)std::rand() / RAND_MAX;
         pmesh->vertices_[i] += pmesh->vertex_normals_[i] * rnd * noise;
     }
+}
+
+std::shared_ptr<argparse::ArgumentParser> GetArgs(int argc, char **argv) {
+    auto parser = std::make_shared<argparse::ArgumentParser>("mean-curvature");
+
+    parser->add_argument("--nitr")
+        .default_value(50)
+        .help("Number of mean-curvature iterations")
+        .scan<'i', int>();
+
+    parser->add_argument("--scale_factor")
+        .default_value(0.035f)
+        .help("Scalar multiplier to scale mesh before processing. Scaling down "
+              "reduce the needed number of iterations")
+        .scan<'g', float>();
+    ;
+
+    parser->add_argument("--filename")
+        .default_value(std::string{"../../assets/se_sub.ply"})
+        .help("Open3d compatible mesh path");
+
+    try {
+        parser->parse_args(argc, argv);
+    } catch (const std::exception &err) {
+        LOG(ERROR) << err.what();
+        std::exit(1);
+    }
+
+    return parser;
 }
 
 void SetupLogger() {
