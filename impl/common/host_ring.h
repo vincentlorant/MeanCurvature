@@ -15,7 +15,6 @@ class HostRing {
         VertexId adjs[2];
         uint8_t count = 0;
 
-        void AddAdj(const VertexId &id);
         void AddAdj(const VertexId &id, const VertexId &pos);
         bool Complete() const;
     };
@@ -24,8 +23,6 @@ class HostRing {
     void AddCenter(VertexId id);
 
     VertexId GetCenter() const;
-
-    void AddEdge(VertexId edge_id, VertexId adj);
 
     void AddEdge(VertexId edge_id, VertexId adj, const VertexId &pos);
 

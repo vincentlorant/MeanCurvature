@@ -7,12 +7,6 @@
 
 #include "cuda_helpers.h"
 
-void HostRing::EdgeData::AddAdj(const VertexId &id) {
-    if (count < 2) {
-        adjs[count++] = id;
-    }
-}
-
 void HostRing::EdgeData::AddAdj(const VertexId &id, const VertexId &pos) {
     if (pos < 2) {
         adjs[pos] = id;
@@ -25,13 +19,6 @@ bool HostRing::EdgeData::Complete() const { return count == 2; }
 void HostRing::AddCenter(VertexId id) { center_ = id; }
 
 VertexId HostRing::GetCenter() const { return center_; }
-
-void HostRing::AddEdge(VertexId edge_id, VertexId adj) {
-    if (edges_.find(edge_id) == edges_.end()) {
-        edges_[edge_id] = EdgeData();
-    }
-    edges_[edge_id].AddAdj(adj);
-}
 
 void HostRing::AddEdge(VertexId edge_id, VertexId adj, const VertexId &pos) {
     if (edges_.find(edge_id) == edges_.end()) {

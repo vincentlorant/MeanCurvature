@@ -26,6 +26,12 @@ void ApplyNoise(std::shared_ptr<open3d::geometry::TriangleMesh> pmesh,
     }
 }
 
+void SetupLogger() {
+    google::InitGoogleLogging("mean_curvature");
+    FLAGS_alsologtostderr = 1;
+    FLAGS_colorlogtostderr = 1;
+}
+
 std::shared_ptr<argparse::ArgumentParser> GetArgs(int argc, char **argv) {
     auto parser = std::make_shared<argparse::ArgumentParser>("mean-curvature");
 
@@ -53,12 +59,6 @@ std::shared_ptr<argparse::ArgumentParser> GetArgs(int argc, char **argv) {
     }
 
     return parser;
-}
-
-void SetupLogger() {
-    google::InitGoogleLogging("mean_curvature");
-    FLAGS_alsologtostderr = 1;
-    FLAGS_colorlogtostderr = 1;
 }
 
 std::shared_ptr<open3d::geometry::TriangleMesh>

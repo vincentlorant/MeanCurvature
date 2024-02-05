@@ -42,8 +42,8 @@ __global__ void AddAmount(typename CudaRing<T>::Vector *arr, int n,
 }
 
 /*
- * When mean-curvature is processed with double floating point precision
- * we can directly copy vertices and normal to device allocated arrays
+ * When the mean-curvature is processed with double floating point precision,
+ * vertices and normals can be directly copied to device allocated arrays
  */
 template <typename T = double, typename = typename std::enable_if<
                                    std::is_same<T, double>::value>::type>
@@ -64,8 +64,8 @@ CopyMeshDataToDevice(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
 }
 
 /*
- * When mean-curvature is processed with single floating points precision
- * we have to convert vertices and normal before to copy them to device
+ * When mean-curvature is processed with single floating points precision,
+ * vertices and normals need to be converted before to be copied to device
  * allocated arrays
  */
 
@@ -95,46 +95,42 @@ CopyMeshDataToDevice(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
     return {d_vertices, d_normals, vec_mem_size};
 }
 
-/*
- * d_edges is expected to be a pointer to edges array allocated on the
- * device; all ring complete edges should be included in the array
- */
 template <typename T>
 CudaRing<T> ToCudaRing(const HostRing &ring, CudaEdge *d_edges) {
 
     return CudaRing<T>(ring.GetCenter(), d_edges, ring.GetCompleteEdgeCount());
 }
 
-// define cuda rings and edges and copy them to device
-template <typename T>
-std::pair<CudaRing<T> *, CudaEdge *>
-GetCudaRingsAndEdges(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
-    auto host_rings = CreateHostRings(mesh);
-    size_t nrings = host_rings.size();
-    std::vector<CudaRing<T>> cuda_rings;
-    cuda_rings.reserve(nrings);
-    // create cuda edges
-    size_t edges_count = 0;
+CudaEdge *CreateCudaEdges(const HostRingsMap &host_rings) {
+    size_t valid_edges_count = 0;
     for (auto &r : host_rings) {
-        edges_count += r.second.GetCompleteEdgeCount();
+        valid_edges_count += r.second.GetCompleteEdgeCount();
     }
-    auto edges = std::vector<CudaEdge>(edges_count);
-    unsigned c = 0;
+    std::vector<CudaEdge> edges;
+    edges.reserve(valid_edges_count);
     for (const auto &r : host_rings) {
         for (const auto &e : r.second.GetEdges()) {
             if (e.second.Complete()) {
-                edges[c++] = {e.first, e.second.adjs[0], e.second.adjs[1]};
+                edges.push_back({e.first, e.second.adjs[0], e.second.adjs[1]});
             }
         }
     }
-    assert(c == edges_count);
     CudaEdge *d_edges;
-    size_t mem_size = sizeof(CudaEdge) * edges_count;
+    size_t mem_size = sizeof(CudaEdge) * valid_edges_count;
     cuCheck(cudaMalloc(&d_edges, mem_size));
     cuCheck(cudaMemcpy(d_edges, edges.data(), mem_size,
                        cudaMemcpyKind::cudaMemcpyHostToDevice));
-    // create cuda rings
+
+    return d_edges;
+}
+
+template <typename T>
+CudaRing<T> *CreateCudaRings(const HostRingsMap &host_rings,
+                             CudaEdge *d_edges) {
     CudaEdge *pos = d_edges;
+    size_t nrings = host_rings.size();
+    std::vector<CudaRing<T>> cuda_rings;
+    cuda_rings.reserve(nrings);
     for (const auto &r : host_rings) {
         cuda_rings.push_back(ToCudaRing<T>(r.second, pos));
         pos += r.second.GetCompleteEdgeCount();
@@ -145,9 +141,22 @@ GetCudaRingsAndEdges(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
     cuCheck(cudaMemcpy(d_cuda_rings, cuda_rings.data(), ring_mem_size,
                        cudaMemcpyKind::cudaMemcpyHostToDevice));
 
+    return d_cuda_rings;
+}
+
+template <typename T>
+std::pair<CudaRing<T> *, CudaEdge *>
+GetCudaRingsAndEdges(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
+    auto host_rings = CreateHostRings(mesh);
+    CudaEdge *d_edges = CreateCudaEdges(host_rings);
+    CudaRing<T> *d_cuda_rings = CreateCudaRings<T>(host_rings, d_edges);
+
     return {d_cuda_rings, d_edges};
 }
 
+/*
+ * Copy device array of double to host
+ */
 std::vector<Eigen::Vector3d> CopyDataToHost(Eigen::Vector3d *d_arr, size_t n) {
     std::vector<typename Eigen::Vector3d> v(n);
     size_t mem_size = sizeof(Eigen::Vector3d) * n;
@@ -156,6 +165,9 @@ std::vector<Eigen::Vector3d> CopyDataToHost(Eigen::Vector3d *d_arr, size_t n) {
     return v;
 }
 
+/*
+ * Copy device array of float to host and convert it to double
+ */
 std::vector<Eigen::Vector3d> CopyDataToHost(Eigen::Vector3f *d_arr, size_t n) {
     std::vector<typename Eigen::Vector3f> v(n);
     size_t mem_size = sizeof(Eigen::Vector3f) * n;
@@ -189,11 +201,12 @@ T GetSmallestEdgeLength(CudaRing<T> *d_cuda_rings, size_t nrings,
     T *d_small_values;
     size_t values_mem_size = sizeof(T) * vertices_num;
     cuCheck(cudaMalloc(&d_small_values, values_mem_size));
+
     GetSmallestEdgesLengths<T><<<grid_size, block_size>>>(
         d_cuda_rings, nrings, d_vertices, d_small_values);
 
     cuCheck(cudaDeviceSynchronize());
-    std::vector<T> smalls(vertices_num, 0);
+    std::vector<T> smalls(vertices_num, 0.0);
     cudaMemcpy(smalls.data(), d_small_values, values_mem_size,
                cudaMemcpyKind::cudaMemcpyDeviceToHost);
     cuCheck(cudaFree(d_small_values));
@@ -205,6 +218,17 @@ template <typename T>
 void MeanCurvatureSmooth<T>::operator()(
     std::shared_ptr<open3d::geometry::TriangleMesh> mesh, int nitr /* = 50 */,
     float scale_factor /* = 0.035 */) {
+    // check inputs
+    if (mesh == nullptr) {
+        LOG(FATAL) << "Invalid mesh";
+    }
+    if (nitr <= 0) {
+        LOG(FATAL) << "Invalid nitr param:" << nitr;
+    }
+    if (scale_factor <= 0) {
+        LOG(FATAL) << "Invalid scale_factor param:" << scale_factor;
+    }
+
     // get device data
     auto [d_cuda_rings, d_edges] = GetCudaRingsAndEdges<T>(mesh);
     auto [d_vertices, d_normals, mem_size] = CopyMeshDataToDevice<T>(mesh);
