@@ -8,7 +8,6 @@ int main(int argc, char **argv) {
     // setup
     SetupLogger();
     auto parser = GetArgs(argc, argv);
-
     // run algorithm
     auto mesh = GetMesh(parser->get<std::string>("--filename"), 0.01, true);
     TimeIt(MeanCurvatureSmooth<float>()(mesh, parser->get<int>("--nitr"),

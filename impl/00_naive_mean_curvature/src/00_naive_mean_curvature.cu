@@ -168,13 +168,12 @@ void MeanCurvatureSmoothing(
     mesh->ComputeVertexNormals();
 }
 
-int main(int argv, char **argc) {
+int main(int argc, char **argv) {
     SetupLogger();
-    int itr = argv > 1 ? std::stoi(argc[1]) : 50;
-    auto filename = "../../assets/se_sub.ply";
-    auto mesh = GetMesh(filename, 0.01, true);
+    auto parser = GetArgs(argc, argv);
+    auto mesh = GetMesh(parser->get<std::string>("--filename"), 0.01, true);
     LOG(INFO) << mesh->vertices_.size();
-    TimeIt(MeanCurvatureSmoothing(mesh, itr));
+    TimeIt(MeanCurvatureSmoothing(mesh, parser->get<int>("--nitr")));
     open3d::visualization::DrawGeometries({mesh}, "debug", 1280, 720, 100, 100,
                                           true);
 
