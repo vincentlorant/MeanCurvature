@@ -39,12 +39,13 @@ T CudaRing<T>::GetSmallestEdgeLength(Vector *positions) const {
 template <typename T>
 void CudaRing<T>::ComputeCurvature(Vector *positions, Vector *normals) const {
     Curvature ct;
+    Vector cn = normals[center_];
     for (int i = 0; i < edges_count_; i++) {
-        ct += ComputeEdgeCurvature(i, positions, normals);
+        ct += ComputeEdgeCurvature(i, positions, cn);
     }
     T delta = ct.NormalizeCurvature();
     delta = max(-0.5f, min(0.5f, delta));
-    positions[center_] -= normals[center_] * delta;
+    positions[center_] -= cn * delta;
 }
 
 template <typename T>
@@ -66,7 +67,7 @@ void CudaRing<T>::UpdateCenterNormal(Vector *positions, Vector *normals) const {
 template <typename T>
 CudaRing<T>::Curvature
 CudaRing<T>::ComputeEdgeCurvature(int edge_idx, Vector *positions,
-                                  Vector *normals) const {
+                                  const Vector &center_normal) const {
     assert(edge_idx < edges_count_);
     const CudaEdge e = edges_[edge_idx];
     int ie = e.end;
@@ -80,7 +81,7 @@ CudaRing<T>::ComputeEdgeCurvature(int edge_idx, Vector *positions,
     CurvatureData dr = ComputeCurvatureWeight(pc, pe, positions[ir]);
 
     const auto pcpi = pc - pe;
-    T forshortening = pcpi.dot(normals[center_]);
+    T forshortening = pcpi.dot(center_normal);
     T wk = 0.0;
 
     if (dl.angle_type == AngleType::Acute &&
@@ -112,7 +113,7 @@ CudaRing<T>::ComputeCurvatureWeight(const Vector &pc, const Vector &pe,
 
     T w = 0.;
     AngleType atype = AngleType::Obtuse;
-    T cotan = vcx.dot(vex) / vcx.cross(vex).norm();
+    T cotan = __fdiv_rn(vcx.dot(vex), vcx.cross(vex).norm());
 
     if (Normalized(vec).dot(Normalized(vxc)) < 0) {
         w = __fmul_rn(vec.cross(vxc).norm(), 0.25);
