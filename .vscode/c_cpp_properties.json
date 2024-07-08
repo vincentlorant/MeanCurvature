@@ -5,14 +5,14 @@
             "includePath": [
                 "${workspaceFolder}/impl/00_naive_mean_curvature/src",
                 "${workspaceFolder}/impl/common",
-                "${workspaceFolder}/deps/Open3D/cpp",
-                "${workspaceFolder}/deps/Open3D/3rdparty/glew/include",
-                "${workspaceFolder}/deps/Open3D/3rdparty/glfw/include",
-                "${workspaceFolder}/deps/Open3D/build/fmt/include",
+                // "${workspaceFolder}/deps/Open3D/cpp",
+                // "${workspaceFolder}/deps/Open3D/3rdparty/glew/include",
+                // "${workspaceFolder}/deps/Open3D/3rdparty/glfw/include",
+                // "${workspaceFolder}/deps/Open3D/build/fmt/include",
                 "${workspaceFolder}/build/vcpkg_installed/x64-linux/include"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/clang",
+            // "compilerPath": "/usr/bin/clang",
             "cStandard": "c20",
             "cppStandard": "c++20",
             "intelliSenseMode": "linux-clang-x64"

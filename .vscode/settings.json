@@ -128,10 +128,12 @@
         "__memory": "cpp",
         "__functional_base_03": "cpp",
         "__tuple": "cpp",
-        "target": "cpp"
+        "target": "cpp",
+        "format": "cpp"
     },
     // "C_Cpp.errorSquiggles": "disabled",
     "cmake.sourceDirectory": "/home/vincent/Documents/GPGPU/blog",
     "editor.formatOnSave": true,
-    "clang-format.executable": "/usr/bin/clang-format"
+    "clang-format.executable": "/usr/bin/clang-format",
+    "C_Cpp.errorSquiggles": "disabled"
 }

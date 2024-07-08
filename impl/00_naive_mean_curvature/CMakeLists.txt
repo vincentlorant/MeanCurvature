@@ -1,4 +1,4 @@
-find_package(CUDA REQUIRED)
+# find_package(CUDA REQUIRED)
 
 set(00_naive_mean_curvature_headers
     src/cuda_ring.h)
@@ -8,7 +8,7 @@ set(00_naive_mean_curvature_sources
     ../common/host_ring.cu
     src/00_naive_mean_curvature.cu)
 
-cuda_add_executable(00_naive_mean_curvature 
+add_executable(00_naive_mean_curvature 
     ${00_naive_mean_curvature_headers}
     ${00_naive_mean_curvature_sources})
 

@@ -1,1 +1,20 @@
 make -j8 CFLAGS="-O3" CXXFLAGS="-O3"
+
+install open3d
+
+apt install libopen3d-dev
+
+
+
+
+below not working
+
+1. download deps
+sudo apt-get update
+sudo apt-get install libxinerama-dev libxcursor-dev libc++-dev libc++abi-dev libglu1-mesa-dev
+
+3. follow instructions
+https://www.open3d.org/docs/release/compilation.html
+
+
+cmake -DCMAKE_CXX_FLAGS="-Wno-error=array-bounds" -DCMAKE_CXX_FLAGS="-Wno-changes-meaning" -DBUILD_PYTHON_MODULE=OFF ..

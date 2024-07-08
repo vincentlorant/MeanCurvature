@@ -9,10 +9,15 @@
     {
       "name": "linux",
       "displayName": "linux",
+      "generator": "Ninja",
       "binaryDir": "build",
-      "toolchainFile": "/home/vincent/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "toolchainFile": "~/dev/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_COMPILER": {
+          "type": "STRING",
+          "value": "gcc"
+        }
       }
     }
   ],
