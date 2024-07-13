@@ -7,7 +7,7 @@ file(GLOB_RECURSE
 add_library(common_lib STATIC ${common_cc})
 
 target_include_directories(common_lib PUBLIC
-    "."
+    ${CMAKE_SOURCE_DIR}/includes
 )
 
 target_add_common_libs(common_lib)

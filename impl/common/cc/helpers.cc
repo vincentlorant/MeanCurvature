@@ -1,5 +1,3 @@
-#pragma once
-
 #include <glog/logging.h>
 #include <oneapi/tbb.h>
 #include <open3d/Open3D.h>
@@ -9,13 +7,6 @@
 #include <filesystem>
 #include <memory>
 #include <string>
-
-#define time_duration std::chrono::duration_cast<std::chrono::milliseconds>
-#define TimeIt(func)                                   \
-  auto t1 = std::chrono::high_resolution_clock::now(); \
-  func;                                                \
-  auto t2 = std::chrono::high_resolution_clock::now(); \
-  LOG(INFO) << time_duration(t2 - t1).count() << "ms";
 
 void SetupLogger() {
   google::InitGoogleLogging("mean_curvature");

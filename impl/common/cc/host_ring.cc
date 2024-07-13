@@ -1,4 +1,4 @@
-#include "host_ring.h"
+#include "common/host_ring.h"
 
 #include <oneapi/tbb.h>
 #include <open3d/Open3D.h>

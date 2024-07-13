@@ -11,6 +11,4 @@ struct CudaRing {
   VertexId center;
   CudaEdge *edges;
   size_t edges_count = 0;
-
-  // CudaRing(VertexId center, CudaEdge *edges, int edges_count);
 };

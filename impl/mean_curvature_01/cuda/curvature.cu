@@ -1,9 +1,9 @@
 #include <Eigen/Dense>
 
-#include "cuda/cuda_helpers.h"
-#include "curvature.h"
-#include "ring_manip.h"
-#include "types.h"
+#include "common/cuda/cuda_helpers.h"
+#include "common/types.h"
+#include "cuda/curvature.h"
+#include "cuda/ring_manip.h"
 
 __global__ void ComputeEdgesLengthKernel(CudaRing* rings, int n,
                                          Eigen::Vector3d* positions,

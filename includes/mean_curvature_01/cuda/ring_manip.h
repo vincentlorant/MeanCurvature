@@ -4,7 +4,7 @@
 
 #include <Eigen/Dense>
 
-#include "types.h"
+#include "common/types.h"
 
 class CudaRingManip {
  private:

@@ -1,7 +1,7 @@
 
 #include <Eigen/Dense>
 
-#include "types.h"
+#include "common/types.h"
 
 std::vector<double> ComputeEdgesLength(CudaRing* d_cuda_rings, size_t rings_n,
                                        Eigen::Vector3d* d_vertices);

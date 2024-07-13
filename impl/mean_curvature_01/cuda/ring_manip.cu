@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <float.h>
 
-#include "ring_manip.h"
-#include "types.h"
+#include "common/types.h"
+#include "cuda/ring_manip.h"
 
 __device__ CudaRingManip::CurvatureTerm::CurvatureTerm() = default;
 
