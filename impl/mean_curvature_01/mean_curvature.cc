@@ -8,6 +8,7 @@
 #include <cassert>
 
 #include "common/cuda/cuda_helpers.h"
+#include "common/cuda_ring.h"
 #include "common/helpers.h"
 #include "common/host_ring.h"
 #include "common/types.h"
@@ -61,54 +62,6 @@ void MeanCurvature::operator()(MeshPtr mesh, int nitr, double scale_factor) {
 
   // Update normals with new vertices
   mesh->ComputeVertexNormals();
-}
-
-CudaRing MeanCurvature::ToCudaRing(const HostRing &ring, CudaEdge *d_edges) {
-  return {ring.GetCenter(), d_edges, ring.GetCompleteEdgeCount()};
-}
-
-std::pair<CudaRing *, CudaEdge *> MeanCurvature::GetCudaRingsAndEdges(
-    std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
-  auto host_rings = CreateHostRings(mesh);
-  size_t nrings = host_rings.size();
-  std::vector<CudaRing> cuda_rings;
-  cuda_rings.reserve(nrings);
-
-  // create cuda edges
-  size_t edges_count = 0;
-  for (auto &r : host_rings) {
-    edges_count += r.second.GetCompleteEdgeCount();
-  }
-  std::cout << "edges_count:" << edges_count << std::endl;
-  auto edges = std::make_unique<CudaEdge[]>(edges_count);
-  int c = 0;
-  for (const auto &r : host_rings) {
-    for (const auto &e : r.second.GetEdges()) {
-      if (e.second.Complete()) {
-        edges[c++] = {e.first, e.second.adjs[0], e.second.adjs[1]};
-      }
-    }
-  }
-  assert(c == edges_count);
-  CudaEdge *d_edges;
-  size_t mem_size = sizeof(CudaEdge) * edges_count;
-  cuCheck(cudaMalloc(&d_edges, mem_size));
-  cuCheck(cudaMemcpy(d_edges, edges.get(), mem_size,
-                     cudaMemcpyKind::cudaMemcpyHostToDevice));
-
-  // create cuda rings
-  CudaEdge *pos = d_edges;
-  for (const auto &r : host_rings) {
-    cuda_rings.push_back(ToCudaRing(r.second, pos));
-    pos += r.second.GetCompleteEdgeCount();
-  }
-  CudaRing *d_cuda_rings;
-  size_t ring_mem_size = (sizeof(CudaRing) * nrings);
-  cuCheck(cudaMalloc(&d_cuda_rings, ring_mem_size));
-  cuCheck(cudaMemcpy(d_cuda_rings, cuda_rings.data(), ring_mem_size,
-                     cudaMemcpyKind::cudaMemcpyHostToDevice));
-
-  return {d_cuda_rings, d_edges};
 }
 
 std::tuple<Eigen::Vector3d *, Eigen::Vector3d *, size_t>

@@ -23,7 +23,7 @@ std::shared_ptr<argparse::ArgumentParser> GetArgs(int argc, char **argv) {
       .scan<'i', int>();
 
   parser->add_argument("--scale_factor")
-      .default_value(0.035f)
+      .default_value(0.2f)
       .help(
           "Scalar multiplier to scale mesh before processing. Scaling down "
           "reduce the needed number of iterations")

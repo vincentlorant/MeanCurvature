@@ -12,7 +12,7 @@ message(${lib_cu})
 add_library(cuda_lib STATIC ${lib_cu})
 
 
-target_include_directories(common_lib PUBLIC
+target_include_directories(cuda_lib PUBLIC
     ${CMAKE_SOURCE_DIR}/includes/mean_curvature_01
 )
 
