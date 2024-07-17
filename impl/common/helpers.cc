@@ -10,11 +10,12 @@
 
 void SetupLogger() {
   google::InitGoogleLogging("mean_curvature");
-  FLAGS_alsologtostderr = 1;
-  FLAGS_colorlogtostderr = 1;
+  FLAGS_alsologtostderr = true;
+  FLAGS_colorlogtostderr = true;
 }
 
-std::shared_ptr<argparse::ArgumentParser> GetArgs(int argc, char **argv) {
+auto GetArgs(
+  int argc, char **argv) -> std::shared_ptr<argparse::ArgumentParser> {
   auto parser = std::make_shared<argparse::ArgumentParser>("mean-curvature");
 
   parser->add_argument("--nitr")
@@ -53,8 +54,9 @@ void ApplyNoise(
   }
 }
 
-std::shared_ptr<open3d::geometry::TriangleMesh>
-GetMesh(const std::string &filename, float noise = 0.01, bool debug = true) {
+auto GetMesh(const std::string &filename,
+  float noise = 0.01,
+  bool debug = true) -> std::shared_ptr<open3d::geometry::TriangleMesh> {
   if (std::filesystem::exists(filename) == false) {
     LOG(FATAL) << "Invalid mesh file:" << filename;
   }

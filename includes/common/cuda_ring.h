@@ -4,11 +4,12 @@
 #include "common/host_ring.h"
 #include "common/types.h"
 
-CudaRing ToCudaRing(const HostRing &ring, CudaEdge *d_edges);
+auto ToCudaRing(const HostRing &ring, CudaEdge *d_edges) -> CudaRing;
 
-CudaEdge *CreateCudaEdges(const HostRingsMap &host_rings);
+auto CreateCudaEdges(const HostRingsMap &host_rings) -> CudaEdge *;
 
-CudaRing *CreateCudaRings(const HostRingsMap &host_rings, CudaEdge *d_edges);
+auto CreateCudaRings(
+  const HostRingsMap &host_rings, CudaEdge *d_edges) -> CudaRing *;
 
-std::pair<CudaRing *, CudaEdge *> GetCudaRingsAndEdges(
-    std::shared_ptr<open3d::geometry::TriangleMesh> mesh);
+auto GetCudaRingsAndEdges(std::shared_ptr<open3d::geometry::TriangleMesh> mesh)
+  -> std::pair<CudaRing *, CudaEdge *>;

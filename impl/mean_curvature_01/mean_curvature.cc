@@ -34,7 +34,7 @@ void MeanCurvature::operator()(MeshPtr mesh, int nitr, double scale_factor) {
   // scale mesh up to ease computation
   auto edges_lengths = ComputeEdgesLength(d_cuda_rings, vertices_n, d_vertices);
   double smallest_edge_length =
-      *std::min_element(edges_lengths.begin(), edges_lengths.end());
+    *std::min_element(edges_lengths.begin(), edges_lengths.end());
   double scalar_fix = scale_factor / smallest_edge_length;
   ScalePositions(d_vertices, vertices_n, scalar_fix);
 
@@ -51,7 +51,7 @@ void MeanCurvature::operator()(MeshPtr mesh, int nitr, double scale_factor) {
 
   // Get back updated vertices to host
   cuCheck(cudaMemcpy(mesh->vertices_.data(), d_vertices, mem_size,
-                     cudaMemcpyKind::cudaMemcpyDeviceToHost));
+    cudaMemcpyKind::cudaMemcpyDeviceToHost));
 
   // free device memory
   cuCheck(cudaFree(d_cuda_rings));
@@ -63,9 +63,8 @@ void MeanCurvature::operator()(MeshPtr mesh, int nitr, double scale_factor) {
   mesh->ComputeVertexNormals();
 }
 
-std::tuple<Eigen::Vector3d *, Eigen::Vector3d *, size_t>
-MeanCurvature::CopyMeshDataToDevice(
-    std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
+auto MeanCurvature::CopyMeshDataToDevice(
+  MeshPtr mesh) -> std::tuple<Eigen::Vector3d *, Eigen::Vector3d *, size_t> {
   size_t vertices_num = mesh->vertices_.size();
   Eigen::Vector3d *d_vertices;
   Eigen::Vector3d *d_normals;
@@ -73,9 +72,9 @@ MeanCurvature::CopyMeshDataToDevice(
   cuCheck(cudaMalloc(&d_vertices, vec_mem_size));
   cuCheck(cudaMalloc(&d_normals, vec_mem_size));
   cuCheck(cudaMemcpy(d_vertices, mesh->vertices_.data(), vec_mem_size,
-                     cudaMemcpyKind::cudaMemcpyHostToDevice));
+    cudaMemcpyKind::cudaMemcpyHostToDevice));
   cuCheck(cudaMemcpy(d_normals, mesh->vertex_normals_.data(), vec_mem_size,
-                     cudaMemcpyKind::cudaMemcpyHostToDevice));
+    cudaMemcpyKind::cudaMemcpyHostToDevice));
 
   return {d_vertices, d_normals, vec_mem_size};
 }

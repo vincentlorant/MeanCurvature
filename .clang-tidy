@@ -1,4 +1,4 @@
-Checks: 'modernize-*,performance-*,clang-analyzer-*'
+Checks: 'modernize-*,performance-*,clang-analyzer-*,-modernize-avoid-c-arrays,-performance-unnecessary-value-param'
 WarningsAsErrors: 'clang-analyzer-*'
 HeaderFilterRegex: '.*'
 CheckOptions:

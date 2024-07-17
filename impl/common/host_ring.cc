@@ -13,11 +13,11 @@ void HostRing::EdgeData::AddAdj(const VertexId &id, const VertexId &pos) {
   }
 }
 
-bool HostRing::EdgeData::Complete() const { return count == 2; }
+auto HostRing::EdgeData::Complete() const -> bool { return count == 2; }
 
 void HostRing::AddCenter(VertexId id) { center_ = id; }
 
-VertexId HostRing::GetCenter() const { return center_; }
+auto HostRing::GetCenter() const -> VertexId { return center_; }
 
 void HostRing::AddEdge(VertexId edge_id, VertexId adj, const VertexId &pos) {
   if (edges_.find(edge_id) == edges_.end()) {
@@ -26,12 +26,12 @@ void HostRing::AddEdge(VertexId edge_id, VertexId adj, const VertexId &pos) {
   edges_[edge_id].AddAdj(adj, pos);
 }
 
-const std::unordered_map<VertexId, HostRing::EdgeData> &
-HostRing::GetEdges() const {
+auto HostRing::GetEdges() const
+  -> const std::unordered_map<VertexId, HostRing::EdgeData> & {
   return edges_;
 }
 
-size_t HostRing::GetCompleteEdgeCount() const {
+auto HostRing::GetCompleteEdgeCount() const -> size_t {
   size_t count = 0;
   for (const auto &p : edges_) {
     if (p.second.Complete()) {
@@ -42,7 +42,7 @@ size_t HostRing::GetCompleteEdgeCount() const {
   return count;
 }
 
-std::vector<int> HostRing::CheckForIncompleteEdges() const {
+auto HostRing::CheckForIncompleteEdges() const -> std::vector<int> {
   std::vector<int> incompletes;
   for (const auto &p : edges_) {
     if (p.second.Complete()) {
@@ -66,8 +66,8 @@ void AddEdges(HostRingsMap &ids_neighbors,
   ac->second.AddEdge(c, b, 0);
 }
 
-HostRingsMap
-CreateHostRings(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
+auto CreateHostRings(
+  std::shared_ptr<open3d::geometry::TriangleMesh> mesh) -> HostRingsMap {
   const auto &triangles = mesh->triangles_;
   HostRingsMap ids_neighbors;
 
