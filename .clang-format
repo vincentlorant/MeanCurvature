@@ -1,0 +1,14 @@
+BasedOnStyle: Google
+IndentWidth: 2
+ColumnLimit: 80
+PenaltyBreakTemplateDeclaration: 0
+PenaltyBreakBeforeFirstCallParameter: 0
+PenaltyBreakString: 0
+PenaltyBreakComment: 0
+PenaltyReturnTypeOnItsOwnLine: 0
+PenaltyBreakAssignment: 0
+
+AlignAfterOpenBracket: DontAlign
+AlwaysBreakTemplateDeclarations: Yes
+BinPackParameters: false
+ContinuationIndentWidth: 2

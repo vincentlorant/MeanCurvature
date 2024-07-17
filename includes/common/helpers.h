@@ -19,10 +19,12 @@
 
 void SetupLogger();
 
-std::shared_ptr<argparse::ArgumentParser> GetArgs(int argc, char **argv);
+auto GetArgs(
+  int argc, char **argv) -> std::shared_ptr<argparse::ArgumentParser>;
 
-void ApplyNoise(std::shared_ptr<open3d::geometry::TriangleMesh> pmesh,
-                float noise);
+void ApplyNoise(
+  std::shared_ptr<open3d::geometry::TriangleMesh> pmesh, float noise);
 
-std::shared_ptr<open3d::geometry::TriangleMesh> GetMesh(
-    const std::string &filename, float noise = 0.01, bool debug = true);
+auto GetMesh(const std::string &filename,
+  float noise = 0.01,
+  bool debug = true) -> std::shared_ptr<open3d::geometry::TriangleMesh>;

@@ -1,23 +1,24 @@
 #include <assert.h>
-#include <float.h>
+
+#include <cuda/std/limits>
 
 #include "common/types.h"
 #include "cuda/ring_manip.h"
 
 template <typename T>
-void CudaRingManip<T>::Curvature::operator+=(const Curvature &otr) {
+__device__ void CudaRingManip<T>::Curvature::operator+=(const Curvature &otr) {
   k = __fadd_rn(k, otr.k);
   w = __fadd_rn(w, otr.w);
 }
 
 template <typename T>
-T CudaRingManip<T>::Curvature::NormalizeCurvature() {
+__device__ T CudaRingManip<T>::Curvature::NormalizeCurvature() {
   return __fdiv_rn(k, __fmul_rn(4.0, w));
 }
 
 template <typename T>
-CudaRingManip<T>::CudaRingManip(VertexId center, CudaEdge *edges,
-                                int edges_count)
+__device__ CudaRingManip<T>::CudaRingManip(
+  VertexId center, CudaEdge *edges, int edges_count)
     : center_(center), edges_(edges), edges_count_(edges_count) {}
 
 template <typename T>
@@ -27,16 +28,16 @@ __device__ CudaRingManip<T>::CudaRingManip(CudaRing *ring)
       edges_count_(ring->edges_count) {}
 
 template <typename T>
-CudaRingManip<T>::~CudaRingManip() {}
+__device__ CudaRingManip<T>::~CudaRingManip() {}
 
 template <typename T>
-int CudaRingManip<T>::GetCenter() const {
+__device__ int CudaRingManip<T>::GetCenter() const {
   return center_;
 }
 
 template <typename T>
-T CudaRingManip<T>::GetSmallestEdgeLength(Vector *positions) const {
-  T smallest = std::numeric_limits<T>::max();
+__device__ T CudaRingManip<T>::GetSmallestEdgeLength(Vector *positions) const {
+  T smallest = ::cuda::std::numeric_limits<T>::max();
   for (int i = 0; i < edges_count_; i++) {
     const CudaEdge &e = edges_[i];
     T length = (positions[e.end] - positions[center_]).norm();
@@ -49,21 +50,21 @@ T CudaRingManip<T>::GetSmallestEdgeLength(Vector *positions) const {
 }
 
 template <typename T>
-void CudaRingManip<T>::ComputeCurvature(Vector *positions,
-                                        Vector *normals) const {
+__device__ void
+CudaRingManip<T>::ComputeCurvature(Vector *positions, Vector *normals) const {
   Curvature ct;
   Vector cn = normals[center_];
   for (int i = 0; i < edges_count_; i++) {
     ct += ComputeEdgeCurvature(i, positions, cn);
   }
   T delta = ct.NormalizeCurvature();
-  delta = max(-0.5f, min(0.5f, delta));
+  delta = fmaxf(-0.5f, fminf(0.5f, delta));
   positions[center_] -= cn * delta;
 }
 
 template <typename T>
-void CudaRingManip<T>::UpdateCenterNormal(Vector *positions,
-                                          Vector *normals) const {
+__device__ void
+CudaRingManip<T>::UpdateCenterNormal(Vector *positions, Vector *normals) const {
   Vector sum = Vector::Zero();
 
   for (int i = 0; i < edges_count_; i++) {
@@ -79,8 +80,8 @@ void CudaRingManip<T>::UpdateCenterNormal(Vector *positions,
 }
 
 template <typename T>
-CudaRingManip<T>::Curvature CudaRingManip<T>::ComputeEdgeCurvature(
-    int edge_idx, Vector *positions, const Vector &center_normal) const {
+__device__ CudaRingManip<T>::Curvature CudaRingManip<T>::ComputeEdgeCurvature(
+  int edge_idx, Vector *positions, const Vector &center_normal) const {
   assert(edge_idx < edges_count_);
   const CudaEdge e = edges_[edge_idx];
   int ie = e.end;
@@ -111,8 +112,9 @@ CudaRingManip<T>::Curvature CudaRingManip<T>::ComputeEdgeCurvature(
 }
 
 template <typename T>
-CudaRingManip<T>::CurvatureData CudaRingManip<T>::ComputeCurvatureWeight(
-    const Vector &pc, const Vector &pe, const Vector &px) const {
+__device__ CudaRingManip<T>::CurvatureData
+CudaRingManip<T>::ComputeCurvatureWeight(
+  const Vector &pc, const Vector &pe, const Vector &px) const {
   auto vcx = pc - px;
   auto vex = pe - px;
   auto vxc = px - pc;
@@ -138,14 +140,15 @@ CudaRingManip<T>::CurvatureData CudaRingManip<T>::ComputeCurvatureWeight(
 }
 
 template <typename T>
-CudaRingManip<T>::Vector CudaRingManip<T>::Normalized(const Vector &v) const {
+__device__ CudaRingManip<T>::Vector
+CudaRingManip<T>::Normalized(const Vector &v) const {
   T norm = Norm(v);
 
   return {__fdiv_rn(v(0), norm), __fdiv_rn(v(1), norm), __fdiv_rn(v(2), norm)};
 }
 
 template <typename T>
-T CudaRingManip<T>::Norm(const Vector &v) const {
+__device__ T CudaRingManip<T>::Norm(const Vector &v) const {
   T xx = __fmul_rn(v(0), v(0));
   T yy = __fmul_rn(v(1), v(1));
   T zz = __fmul_rn(v(2), v(2));

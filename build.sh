@@ -1,1 +1,0 @@
-cmake --preset=linux -DOpen3D_ROOT=${HOME}/open3d_install .

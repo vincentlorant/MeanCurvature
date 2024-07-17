@@ -1,12 +1,10 @@
 #include "mean_curvature.h"
 
+#include <glog/logging.h>
 #include <oneapi/tbb.h>
 #include <open3d/Open3D.h>
 
 #include <Eigen/Dense>
-#include <memory>
-#include <tuple>
-#include <type_traits>
 
 #include "common/cuda/cuda_helpers.h"
 #include "common/cuda_ring.h"

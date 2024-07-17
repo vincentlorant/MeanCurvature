@@ -16,7 +16,7 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_CXX_COMPILER": {
           "type": "STRING",
-          "value": "gcc"
+          "value": "clang++-17"
         }
       }
     }

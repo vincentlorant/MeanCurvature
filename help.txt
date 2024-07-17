@@ -18,3 +18,8 @@ https://www.open3d.org/docs/release/compilation.html
 
 
 cmake -DCMAKE_CXX_FLAGS="-Wno-error=array-bounds" -DCMAKE_CXX_FLAGS="-Wno-changes-meaning" -DBUILD_PYTHON_MODULE=OFF ..
+
+
+
+### run clang-tidy
+clang-tidy -p=build ./impl/mean_curvature_02/main.cc

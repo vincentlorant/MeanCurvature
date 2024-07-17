@@ -1,9 +1,9 @@
 #pragma once
 
-#include <glog/logging.h>
 #include <oneapi/tbb/concurrent_hash_map.h>
 #include <open3d/Open3D.h>
 
+#include <array>
 #include <unordered_map>
 #include <vector>
 
@@ -11,37 +11,39 @@
 
 class HostRing {
  public:
-  struct EdgeData {
-    VertexId adjs[2];
-    uint8_t count = 0;
-
+  class EdgeData {
+   public:
     void AddAdj(const VertexId &id, const VertexId &pos);
-    bool Complete() const;
+    [[nodiscard]] auto Complete() const -> bool;
+
+    std::array<VertexId, 2> adjs;
+    uint8_t count = 0;
   };
 
  public:
   void AddCenter(VertexId id);
 
-  VertexId GetCenter() const;
+  auto GetCenter() const -> VertexId;
 
   void AddEdge(VertexId edge_id, VertexId adj, const VertexId &pos);
 
-  const std::unordered_map<VertexId, EdgeData> &GetEdges() const;
+  auto GetEdges() const -> const std::unordered_map<VertexId, EdgeData> &;
 
-  size_t GetCompleteEdgeCount() const;
+  auto GetCompleteEdgeCount() const -> size_t;
 
-  // happens when input meshes are not closed
-  std::vector<int> CheckForIncompleteEdges() const;
+  auto CheckForIncompleteEdges() const -> std::vector<int>;
 
- private:
   std::unordered_map<VertexId, EdgeData> edges_;
   VertexId center_ = -1;
 };
 
 using HostRingsMap = tbb::concurrent_hash_map<int, HostRing>;
 
-void AddEdges(HostRingsMap &ids_neighbors, HostRingsMap::accessor &ac,
-              const VertexId &a, const VertexId &b, const VertexId &c);
+void AddEdges(HostRingsMap &ids_neighbors,
+  HostRingsMap::accessor &ac,
+  const VertexId &a,
+  const VertexId &b,
+  const VertexId &c);
 
-HostRingsMap CreateHostRings(
-    std::shared_ptr<open3d::geometry::TriangleMesh> mesh);
+auto CreateHostRings(
+  std::shared_ptr<open3d::geometry::TriangleMesh> mesh) -> HostRingsMap;

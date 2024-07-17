@@ -8,6 +8,6 @@ class MeanCurvature {
   void operator()(MeshPtr mesh, int nitr = 50, double scale_factor = 0.2);
 
  private:
-  std::tuple<Eigen::Vector3d *, Eigen::Vector3d *, size_t> CopyMeshDataToDevice(
-      MeshPtr mesh);
+  auto CopyMeshDataToDevice(
+    MeshPtr mesh) -> std::tuple<Eigen::Vector3d *, Eigen::Vector3d *, size_t>;
 };

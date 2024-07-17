@@ -26,8 +26,8 @@ void HostRing::AddEdge(VertexId edge_id, VertexId adj, const VertexId &pos) {
   edges_[edge_id].AddAdj(adj, pos);
 }
 
-const std::unordered_map<VertexId, HostRing::EdgeData> &HostRing::GetEdges()
-    const {
+const std::unordered_map<VertexId, HostRing::EdgeData> &
+HostRing::GetEdges() const {
   return edges_;
 }
 
@@ -53,8 +53,11 @@ std::vector<int> HostRing::CheckForIncompleteEdges() const {
   return incompletes;
 }
 
-void AddEdges(HostRingsMap &ids_neighbors, HostRingsMap::accessor &ac,
-              const VertexId &a, const VertexId &b, const VertexId &c) {
+void AddEdges(HostRingsMap &ids_neighbors,
+  HostRingsMap::accessor &ac,
+  const VertexId &a,
+  const VertexId &b,
+  const VertexId &c) {
   if (!ids_neighbors.find(ac, a)) {
     ids_neighbors.insert(ac, a);
     ac->second.AddCenter(a);
@@ -63,8 +66,8 @@ void AddEdges(HostRingsMap &ids_neighbors, HostRingsMap::accessor &ac,
   ac->second.AddEdge(c, b, 0);
 }
 
-HostRingsMap CreateHostRings(
-    std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
+HostRingsMap
+CreateHostRings(std::shared_ptr<open3d::geometry::TriangleMesh> mesh) {
   const auto &triangles = mesh->triangles_;
   HostRingsMap ids_neighbors;
 

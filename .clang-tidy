@@ -1,0 +1,8 @@
+Checks: 'modernize-*,performance-*,clang-analyzer-*'
+WarningsAsErrors: 'clang-analyzer-*'
+HeaderFilterRegex: '.*'
+CheckOptions:
+  - key:             modernize-use-auto.MinTypeNameLength
+    value:           '5'
+  - key:             readability-identifier-naming.VariableCase
+    value:           'camelCase'

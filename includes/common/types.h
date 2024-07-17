@@ -1,10 +1,12 @@
 #pragma once
 
+#include <array>
+
 using VertexId = int;
 
 struct CudaEdge {
   VertexId end;
-  VertexId adjs[2];
+  std::array<VertexId, 2> adjs;
 };
 
 struct CudaRing {

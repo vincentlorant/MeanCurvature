@@ -1,5 +1,6 @@
 #include <assert.h>
-#include <float.h>
+
+#include <cuda/std/limits>
 
 #include "common/types.h"
 #include "cuda/ring_manip.h"
@@ -9,8 +10,8 @@ __device__ CudaRingManip::CurvatureTerm::CurvatureTerm() = default;
 __device__ CudaRingManip::CurvatureTerm::CurvatureTerm(double kv, double wv)
     : k(kv), w(wv) {}
 
-__device__ void CudaRingManip::CurvatureTerm::operator+=(
-    const CurvatureTerm &otr) {
+__device__ void
+CudaRingManip::CurvatureTerm::operator+=(const CurvatureTerm &otr) {
   k += otr.k;
   w += otr.w;
 }
@@ -19,8 +20,8 @@ __device__ double CudaRingManip::CurvatureTerm::NormalizeCurvature() {
   return k / (4.0 * w);
 }
 
-__device__ CudaRingManip::CudaRingManip(VertexId center, CudaEdge *edges,
-                                        int edges_count)
+__device__
+CudaRingManip::CudaRingManip(VertexId center, CudaEdge *edges, int edges_count)
     : center_(center), edges_(edges), edges_count_(edges_count) {}
 
 __device__ CudaRingManip::CudaRingManip(CudaRing *ring)
@@ -40,9 +41,9 @@ __device__ void CudaRingManip::AddEdge(int end, int adj1, int adj2) {
 
 __device__ int CudaRingManip::GetCenter() { return center_; }
 
-__device__ double CudaRingManip::GetSmallestEdgeLength(
-    Eigen::Vector3d *positions) {
-  double smallest = DBL_MAX;
+__device__ double
+CudaRingManip::GetSmallestEdgeLength(Eigen::Vector3d *positions) {
+  double smallest = ::cuda::std::numeric_limits<double>::max();
   for (int i = 0; i < edges_count_; i++) {
     const CudaEdge &e = edges_[i];
     double length = (positions[e.end] - positions[center_]).norm();
@@ -54,19 +55,19 @@ __device__ double CudaRingManip::GetSmallestEdgeLength(
   return smallest;
 }
 
-__device__ void CudaRingManip::ComputeCurvature(Eigen::Vector3d *positions,
-                                                Eigen::Vector3d *normals) {
+__device__ void CudaRingManip::ComputeCurvature(
+  Eigen::Vector3d *positions, Eigen::Vector3d *normals) {
   CurvatureTerm ct;
   for (int i = 0; i < edges_count_; i++) {
     ct += ComputeEdgeCurvature(i, positions, normals);
   }
   double delta = ct.NormalizeCurvature();
-  delta = max(-0.5, min(0.5, delta));  // prevents unwanted big updates
+  delta = fmaxf(-0.5, fminf(0.5, delta));  // prevents unwanted big updates
   positions[center_] -= normals[center_] * delta;
 }
 
 __device__ CudaRingManip::CurvatureTerm CudaRingManip::ComputeEdgeCurvature(
-    int edge_idx, Eigen::Vector3d *positions, Eigen::Vector3d *normals) {
+  int edge_idx, Eigen::Vector3d *positions, Eigen::Vector3d *normals) {
   assert(edge_idx < edges_count_);
   const CudaEdge &e = edges_[edge_idx];
   int ie = e.end;
@@ -96,9 +97,10 @@ __device__ CudaRingManip::CurvatureTerm CudaRingManip::ComputeEdgeCurvature(
   return {wk, dr.area + dl.area};
 }
 
-__device__ CudaRingManip::CurvatureData CudaRingManip::GetCurvatureData(
-    const Eigen::Vector3d &pc, const Eigen::Vector3d &pe,
-    const Eigen::Vector3d &px) {
+__device__ CudaRingManip::CurvatureData
+CudaRingManip::GetCurvatureData(const Eigen::Vector3d &pc,
+  const Eigen::Vector3d &pe,
+  const Eigen::Vector3d &px) {
   auto vcx = pc - px;
   auto vex = pe - px;
   auto vxc = px - pc;
