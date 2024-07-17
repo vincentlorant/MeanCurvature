@@ -31,11 +31,10 @@ void MeanCurvature::operator()(MeshPtr mesh, int nitr, double scale_factor) {
   auto [d_vertices, d_normals, mem_size] = CopyMeshDataToDevice(mesh);
   size_t vertices_n = mesh->vertices_.size();
 
+  // scale mesh up to ease computation
   auto edges_lengths = ComputeEdgesLength(d_cuda_rings, vertices_n, d_vertices);
   double smallest_edge_length =
       *std::min_element(edges_lengths.begin(), edges_lengths.end());
-
-  // scale mesh up to ease computation
   double scalar_fix = scale_factor / smallest_edge_length;
   ScalePositions(d_vertices, vertices_n, scalar_fix);
 
@@ -54,7 +53,7 @@ void MeanCurvature::operator()(MeshPtr mesh, int nitr, double scale_factor) {
   cuCheck(cudaMemcpy(mesh->vertices_.data(), d_vertices, mem_size,
                      cudaMemcpyKind::cudaMemcpyDeviceToHost));
 
-  //
+  // free device memory
   cuCheck(cudaFree(d_cuda_rings));
   cuCheck(cudaFree(d_edges));
   cuCheck(cudaFree(d_vertices));

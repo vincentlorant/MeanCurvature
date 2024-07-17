@@ -11,8 +11,8 @@ int main(int argc, char **argv) {
   auto parser = GetArgs(argc, argv);
   // run algorithm
   auto mesh = GetMesh(parser->get<std::string>("--filename"), 0.01, true);
-  TimeIt(MeanCurvatureSmooth<float>()(mesh, parser->get<int>("--nitr"),
-                                      parser->get<float>("--scale_factor")));
+  TimeIt(MeanCurvature<float>()(mesh, parser->get<int>("--nitr"),
+                                parser->get<float>("--scale_factor")));
   // visualize
   open3d::visualization::DrawGeometries({mesh});
 
