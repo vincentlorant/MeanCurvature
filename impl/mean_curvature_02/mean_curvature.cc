@@ -14,35 +14,6 @@
 #include "common/types.h"
 #include "cuda/curvature.h"
 
-// template <typename T>
-// __global__ void MeanCurvature(CudaRing<T> *rings, int n,
-//                               typename CudaRing<T>::Vector *positions,
-//                               typename CudaRing<T>::Vector *normals) {
-//   int i = threadIdx.x + blockIdx.x * blockDim.x;
-//   if (i < n) {
-//     rings[i].ComputeCurvature(positions, normals);
-//   }
-// }
-
-// template <typename T>
-// __global__ void UpdateNormals(CudaRing<T> *rings, int n,
-//                               typename CudaRing<T>::Vector *positions,
-//                               typename CudaRing<T>::Vector *normals) {
-//   int i = threadIdx.x + blockIdx.x * blockDim.x;
-//   if (i < n) {
-//     rings[i].UpdateCenterNormal(positions, normals);
-//   }
-// }
-
-// template <typename T>
-// __global__ void AddAmount(typename CudaRing<T>::Vector *arr, int n,
-//                           float amount) {
-//   int i = threadIdx.x + blockIdx.x * blockDim.x;
-//   if (i < n) {
-//     arr[i] *= amount;
-//   }
-// }
-
 /*
  * When the mean-curvature is processed with double floating point precision,
  * vertices and normals can be directly copied to device allocated arrays
@@ -121,42 +92,6 @@ std::vector<Eigen::Vector3d> CopyDataToHost(Eigen::Vector3f *d_arr, size_t n) {
   return std::vector<Eigen::Vector3d>(vd.cast<double>().colwise().begin(),
                                       vd.cast<double>().colwise().end());
 }
-
-// template <typename T>
-// __global__ void GetSmallestEdgesLengths(CudaRing<T> *rings, int n,
-//                                         typename CudaRing<T>::Vector
-//                                         *positions, T *out) {
-//   int i = threadIdx.x + blockIdx.x * blockDim.x;
-//   if (i < n) {
-//     out[i] = rings[i].GetSmallestEdgeLength(positions);
-//   }
-// }
-
-// /*
-//  * Uniformly scales up vertices based on the smallest edge's length to
-//  * ensure computation-friendly values, especially when dealing with
-//  * small edge lengths.
-//  */
-// template <typename T>
-// T GetSmallestEdgeLength(CudaRing<T> *d_cuda_rings, size_t nrings,
-//                         typename CudaRing<T>::Vector *d_vertices,
-//                         size_t vertices_num, dim3 grid_size, dim3 block_size)
-//                         {
-//   T *d_small_values;
-//   size_t values_mem_size = sizeof(T) * vertices_num;
-//   cuCheck(cudaMalloc(&d_small_values, values_mem_size));
-
-//   GetSmallestEdgesLengths<T><<<grid_size, block_size>>>(
-//       d_cuda_rings, nrings, d_vertices, d_small_values);
-
-//   cuCheck(cudaDeviceSynchronize());
-//   std::vector<T> smalls(vertices_num, 0.0);
-//   cudaMemcpy(smalls.data(), d_small_values, values_mem_size,
-//              cudaMemcpyKind::cudaMemcpyDeviceToHost);
-//   cuCheck(cudaFree(d_small_values));
-
-//   return *std::min_element(smalls.begin(), smalls.end());
-// }
 
 template <typename T>
 void MeanCurvature<T>::operator()(

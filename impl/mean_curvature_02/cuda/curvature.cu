@@ -5,6 +5,7 @@
 #include "common/cuda/cuda_helpers.h"
 #include "common/types.h"
 #include "cuda/curvature.h"
+#include "cuda/ring_manip.h"
 
 // AddAmount
 
@@ -36,12 +37,12 @@ template void AddAmount(Eigen::Matrix<float, 3, 1> *d_vertices,
 // GetSmallestEdgeLength
 
 template <typename T>
-__global__ void GetSmallestEdgesLengthsKernel(CudaRing *rings, int n,
+__global__ void GetSmallestEdgesLengthsKernel(CudaRing *d_rings, int n,
                                               Eigen::Matrix<T, 3, 1> *positions,
                                               T *out) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   if (i < n) {
-    // out[i] = rings[i].GetSmallestEdgeLength(positions);
+    out[i] = CudaRingManip<T>(&d_rings[i]).GetSmallestEdgeLength(positions);
   }
 }
 
@@ -79,13 +80,13 @@ template float GetSmallestEdgeLength(CudaRing *d_rings, size_t nrings,
 // UpdateNormals
 
 template <typename T>
-__global__ void UpdateNormalsKernel(CudaRing *rings,
+__global__ void UpdateNormalsKernel(CudaRing *d_rings,
                                     Eigen::Matrix<T, 3, 1> *d_positions,
                                     Eigen::Matrix<T, 3, 1> *d_normals,
                                     size_t n) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   if (i < n) {
-    // rings[i].UpdateCenterNormal(d_positions, d_normals);
+    CudaRingManip<T>(&d_rings[i]).UpdateCenterNormal(d_positions, d_normals);
   }
 }
 
@@ -118,7 +119,7 @@ __global__ void MeanCurvatureKernel(CudaRing *d_rings,
                                     size_t n) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   if (i < n) {
-    // d_rings[i].ComputeCurvature(d_positions, d_normals);
+    CudaRingManip<T>(&d_rings[i]).ComputeCurvature(d_positions, d_normals);
   }
 }
 
