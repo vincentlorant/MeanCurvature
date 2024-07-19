@@ -53,12 +53,11 @@ class CudaRingManip {
   __device__ void UpdateCenterNormal(Vector *positions, Vector *normals) const;
 
  private:
-  __device__ Curvature ComputeEdgeCurvature(int edge_idx, Vector *positions,
-                                            const Vector &center_normal) const;
+  __device__ Curvature ComputeEdgeCurvature(
+    int edge_idx, Vector *positions, const Vector &center_normal) const;
 
-  __device__ CurvatureData ComputeCurvatureWeight(const Vector &pc,
-                                                  const Vector &pe,
-                                                  const Vector &px) const;
+  __device__ CurvatureData ComputeCurvatureWeight(
+    const Vector &pc, const Vector &pe, const Vector &px) const;
 
   __device__ Vector Normalized(const Vector &v) const;
 

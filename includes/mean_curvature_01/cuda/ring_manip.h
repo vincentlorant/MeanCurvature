@@ -46,15 +46,14 @@ class CudaRingManip {
 
   __device__ double GetSmallestEdgeLength(Eigen::Vector3d *positions);
 
-  __device__ void ComputeCurvature(Eigen::Vector3d *positions,
-                                   Eigen::Vector3d *normals);
+  __device__ void
+  ComputeCurvature(Eigen::Vector3d *positions, Eigen::Vector3d *normals);
 
  private:
-  __device__ CurvatureTerm ComputeEdgeCurvature(int edge_idx,
-                                                Eigen::Vector3d *positions,
-                                                Eigen::Vector3d *normals);
+  __device__ CurvatureTerm ComputeEdgeCurvature(
+    int edge_idx, Eigen::Vector3d *positions, Eigen::Vector3d *normals);
 
   __device__ CurvatureData GetCurvatureData(const Eigen::Vector3d &pe,
-                                            const Eigen::Vector3d &pa,
-                                            const Eigen::Vector3d &pb);
+    const Eigen::Vector3d &pa,
+    const Eigen::Vector3d &pb);
 };
