@@ -134,7 +134,8 @@
         "__threading_support": "cpp",
         "__verbose_abort": "cpp",
         "__debug": "cpp",
-        "execution": "cpp"
+        "execution": "cpp",
+        "print": "cpp"
     },
     // "C_Cpp.errorSquiggles": "disabled",
     "cmake.sourceDirectory": "/home/vincent/Documents/GPGPU/blog",
