@@ -2,9 +2,9 @@
 
 Cuda implementation of "Discrete Differential-Geometry Operators for Triangulated 2-Manifolds".
 
-![alt text](https://vincentlorant.io/_next/image?url=http%3A%2F%2Fcms%3A3002%2Fuploads%2Fmean_curvature_result_da810638c0.png&w=1920&q=75)
+![alt text](https://vincentlorant.io/posts/mean-curvature/cover_hu_7073e9fbdf84dea8.jpg)
 
-This [Article](https://vincentlorant.io/articles/mean-curvature) shares high-level information about the implementation.
+This [Article](https://vincentlorant.io/posts/mean-curvature/) shares high-level information about the implementation.
 
 ### Setup dependencies
 
